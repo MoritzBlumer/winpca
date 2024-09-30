@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+#
+# Moritz Blumer, 2024
 
 """
 WinPCA. A package for windowed PCA analysis.
 """
+

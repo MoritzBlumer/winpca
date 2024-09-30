@@ -56,6 +56,14 @@ class GTWindowedPCA:
         # results
         self.out_dct = {
         }
+        self.pc_1 = None
+        self.pc_2 = None
+        self.hets = None
+        self.miss = None
+        self.pc_1_ve = None
+        self.pc_2_ve = None
+        self.n_var = None
+
 
         # genotype encoding
         self.gt_code_dct = {
@@ -290,8 +298,6 @@ class GTWindowedPCA:
         )
 
 
-    ## Parsing called genotypes (GT) from  VCF
-
     def win_vcf_gt(self):
         '''
         Apply a target function to windows of variants (GT field) in an 
@@ -371,3 +377,40 @@ class GTWindowedPCA:
             '\n[INFO] Processed all windows',
             file=sys.stderr, flush=True,
         )
+
+    def parse_results(self):
+
+        # convert to df
+        out_df = pd.DataFrame.from_dict(self.out_dct, orient='index')
+
+        # pc_1
+        self.pc_1 = out_df[[]].copy()
+        self.pc_1[self.sample_lst] = pd.DataFrame(
+            out_df['pc_1'].to_list(),
+            index=out_df.index
+        )
+
+        # pc_2
+        self.pc_2 = out_df[[]].copy()
+        self.pc_2[self.sample_lst] = pd.DataFrame(
+            out_df['pc_2'].to_list(),
+            index=out_df.index
+        )
+
+        # heterozygosity
+        self.hets = out_df[[]].copy()
+        self.hets[self.sample_lst] = pd.DataFrame(
+            out_df['n_hets'].to_list(),
+            index=out_df.index
+        )
+
+        # missingness
+        self.miss = out_df[[]].copy()
+        self.miss[self.sample_lst] = pd.DataFrame(
+            out_df['n_miss'].to_list(),
+            index=out_df.index
+        )
+
+        # stats: window index, pc_1/pc_2 variance explained, number of variants
+        self.stats = out_df[['w_idx', 'pc_1_ve', 'pc_2_ve', 'n_var']].copy()
+
