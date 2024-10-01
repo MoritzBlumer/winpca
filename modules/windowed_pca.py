@@ -6,8 +6,6 @@ Central window parsers and PCA functions.
 import sys
 import gzip
 import numpy as np
-from numba import njit, prange, set_num_threads
-import pandas as pd
 import allel
 
 
@@ -48,7 +46,7 @@ class GTWindowedPCA:
         self.n_windows = None
         self.w_start = None
         self.w_stop = None
-        self.w_mid = None
+        self.pos = None
         self.w_idx = None
         self.win = None
         self.w_gt_arr = None
@@ -56,14 +54,6 @@ class GTWindowedPCA:
         # results
         self.out_dct = {
         }
-        self.pc_1 = None
-        self.pc_2 = None
-        self.hets = None
-        self.miss = None
-        self.pc_1_ve = None
-        self.pc_2_ve = None
-        self.n_var = None
-
 
         # genotype encoding
         self.gt_code_dct = {
@@ -152,7 +142,7 @@ class GTWindowedPCA:
         '''
 
         # get window mid for X value
-        w_mid = int(self.w_start + self.w_size/2-1)
+        pos = int(self.w_start + self.w_size/2-1)
 
         # count variants
         n_var = self.w_gt_arr.shape[0]
@@ -177,7 +167,7 @@ class GTWindowedPCA:
 
             # compile to output
             out = {
-                'w_idx': self.w_idx,
+                'pos': pos,
                 'pc_1': pca[0][:, 0],
                 'pc_2': pca[0][:, 1],
                 'pc_1_ve': pca[1].explained_variance_ratio_[0]*100,
@@ -198,7 +188,7 @@ class GTWindowedPCA:
             )
             empty_lst = [None] * self.w_gt_arr.shape[1]
             out = {
-                'w_idx': self.w_idx,
+                'pos': pos,
                 'pc_1': empty_lst,
                 'pc_2': empty_lst,
                 'pc_1_ve': None,
@@ -209,7 +199,7 @@ class GTWindowedPCA:
             }
 
         # append output
-        self.out_dct[w_mid] = out
+        self.out_dct[self.w_idx] = out
 
 
     def win_gt_file(self):
@@ -377,40 +367,4 @@ class GTWindowedPCA:
             '\n[INFO] Processed all windows',
             file=sys.stderr, flush=True,
         )
-
-    def parse_results(self):
-
-        # convert to df
-        out_df = pd.DataFrame.from_dict(self.out_dct, orient='index')
-
-        # pc_1
-        self.pc_1 = out_df[[]].copy()
-        self.pc_1[self.sample_lst] = pd.DataFrame(
-            out_df['pc_1'].to_list(),
-            index=out_df.index
-        )
-
-        # pc_2
-        self.pc_2 = out_df[[]].copy()
-        self.pc_2[self.sample_lst] = pd.DataFrame(
-            out_df['pc_2'].to_list(),
-            index=out_df.index
-        )
-
-        # heterozygosity
-        self.hets = out_df[[]].copy()
-        self.hets[self.sample_lst] = pd.DataFrame(
-            out_df['n_hets'].to_list(),
-            index=out_df.index
-        )
-
-        # missingness
-        self.miss = out_df[[]].copy()
-        self.miss[self.sample_lst] = pd.DataFrame(
-            out_df['n_miss'].to_list(),
-            index=out_df.index
-        )
-
-        # stats: window index, pc_1/pc_2 variance explained, number of variants
-        self.stats = out_df[['w_idx', 'pc_1_ve', 'pc_2_ve', 'n_var']].copy()
 
