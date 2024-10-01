@@ -12,3 +12,6 @@ skip_monomorphic=False
 w_size = 1000000
 w_step = 10000
 plot_interval = 100
+
+# polarization
+n_prev_windows = 5

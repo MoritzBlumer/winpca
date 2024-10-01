@@ -404,6 +404,9 @@ class CLI:
         if hasattr(args, 'sequences'):
             self.args_dct['sequence_lst'] = sequence_lst
         
+        # add default values from config
+        self.args_dct['n_prev_windows'] = config.n_prev_windows
+
 
 
 

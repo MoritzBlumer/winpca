@@ -26,9 +26,9 @@ class GTWindowedPCA:
                  w_size=config.w_size, w_step=config.w_step, 
                  min_var_per_w=config.min_var_per_w,
                  skip_monomorphic=config.skip_monomorphic, 
-                 min_maf=config.min_maf, ):
+                 min_maf=config.min_maf,):
 
-        # variant file/refion
+        # variant file/region
         self.variant_file_path = variant_file_path
         self.sample_lst = sample_lst
         self.chrom = chrom
