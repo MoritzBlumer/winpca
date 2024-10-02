@@ -3,7 +3,11 @@ Central class to store, read, write and modify PCA and associated data.
 '''
 
 # IMPORT PACKAGES
+import sys
 import pandas as pd
+
+
+## CLASSES
 
 class WPCAData:
     '''
@@ -94,7 +98,7 @@ class WPCAData:
 
         # print info
         print(
-            f'\n[INFO] Reading results from prefix "{self.prefix}*".',
+            f'\n[INFO] Reading data from prefix "{self.prefix}*".',
             file=sys.stderr, flush=True,
         )
 

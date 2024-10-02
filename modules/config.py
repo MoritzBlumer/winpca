@@ -1,17 +1,26 @@
-## GLOBAL SETINGS (ok to change)
-min_var_per_w = 25  # minimum number of polymorphic variants per window
+## DEFAULT SETTINGS
 
-
-
-## SHARED VARIABLES (don't change anything below, min_maf can be specified in the command line)
-min_maf = 0.01
-pc = None # obsolete
-n_threads = 2 
-plot_scaling_factor = 20000
+# pca + pcangsd
 skip_monomorphic=False
+min_var_per_w = 25
+min_maf = 0.01
 w_size = 1000000
 w_step = 10000
-plot_interval = 100
 
-# polarization
+# pcangsd
+n_threads = 2
+
+# polarize
 n_prev_windows = 5
+pol_mode = 'auto'
+pol_pc = '1'
+
+# flip
+flip_pc = '1'
+
+# chromplot + genomeplot
+plot_fmt = 'both'
+
+# genomeplot
+plot_chroms = 'all'
+plot_interval = 100

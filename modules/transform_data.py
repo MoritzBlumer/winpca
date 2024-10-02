@@ -178,5 +178,25 @@ class Polarize:
 
 class Flip:
     '''
-    Flip chromosome, flip window(s)
+    Flip all PC values of a chromosome or specific windows.
     '''
+
+    def flip_chrom(self, pc_df):
+        '''
+        Flip all PC values for a chromosome.
+        '''
+        
+        return pc_df * -1
+    
+    def flip_windows(self, pc_df, coord_lst):
+        '''
+        Flip specifiec windows.
+        '''
+        
+        pass
+
+    
+        
+
+
+
