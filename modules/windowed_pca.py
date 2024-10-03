@@ -170,8 +170,8 @@ class GTWindowedPCA:
                 'pos': pos,
                 'pc_1': pca[0][:, 0],
                 'pc_2': pca[0][:, 1],
-                'pc_1_ve': pca[1].explained_variance_ratio_[0]*100,
-                'pc_2_ve': pca[1].explained_variance_ratio_[1]*100,
+                'pc_1_ve': round(pca[1].explained_variance_ratio_[0]*100, 2),
+                'pc_2_ve': round(pca[1].explained_variance_ratio_[1]*100, 2),
                 'n_hets': n_hets_lst,
                 'n_miss': n_miss_lst,
                 'n_var': n_var
@@ -243,7 +243,7 @@ class GTWindowedPCA:
                 gts = [line[2:][idx] for idx in sample_idx_lst]
                 
                 # skip monomorphic sites if specified
-                if self.skip_monomorphic and len(set(gts)) == 1: continue ### MODIFY (?)
+                if self.skip_monomorphic and len(set(gts)) == 1: continue       ### MODIFY (?)
 
                 # case: pos exceeds current window
                 while self.w_stop < pos:
@@ -281,7 +281,7 @@ class GTWindowedPCA:
                         self.w_size, self.w_step
                         )
                     
-        # print exit message
+        # print info
         print(
             '\n[INFO] Processed all windows',
             file=sys.stderr, flush=True,

@@ -13,13 +13,14 @@ n_threads = 2
 # polarize
 n_prev_windows = 5
 pol_mode = 'auto'
-pol_pc = '1'
+pol_pc = 'both'
 
 # flip
 flip_pc = '1'
 
 # chromplot + genomeplot
 plot_fmt = 'both'
+color_by = 'id'
 
 # genomeplot
 plot_chroms = 'all'

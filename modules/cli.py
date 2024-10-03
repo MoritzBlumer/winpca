@@ -185,10 +185,9 @@ class CLI:
 
         # define subparser-specific arguments
         polarize_parser.add_argument(
-            '-c', '--principal_component', dest='pc', required=False, 
-            choices=['1', '2', 'both'], default=config.pol_pc, metavar='\b', 
-            help='Specify which PC to re-polarize ("1", "2" or "both")'
-            f' [default: {config.pol_pc}].')
+            '-c', '--principal_component', dest='pol_pc', required=False, 
+            choices=['1', '2', 'both'], default=1, metavar='\b', help='Specify'
+            f' which PC to re-polarize ("1", "2" or "both") [default: 1].')
         polarize_parser.add_argument(
             '-p', '--polarize', dest='polarize', required=False,
             default=config.pol_mode, choices=['auto', 'guide_samples'], 
@@ -218,7 +217,7 @@ class CLI:
 
         # define subparser-specific arguments
         flip_parser.add_argument(
-            '-c', '--principal_component', dest='pc', required=True, 
+            '-c', '--principal_component', dest='flip_pc', required=True, 
             choices=['1', '2', 'both'], default=config.flip_pc, metavar='\b', 
             help='Specify which PC to flip ("1", "2" or "both")'
             f' [default: {config.flip_pc}].')
@@ -376,7 +375,7 @@ class CLI:
             if ',' in args.samples:
                 sample_lst = args.samples.split(',')
             else:
-                sample_lst = None
+                sample_lst = []
                 with open(args.samples, 'r') as sample_file:
                     for line in sample_file:
                        sample_lst.append(line.strip().split('\t')[0])
@@ -414,17 +413,22 @@ class CLI:
         if hasattr(args, 'sequences'):
             self.args_dct['sequence_lst'] = sequence_lst
         
-        # add default values from config
-        self.args_dct['skip_monomorphic'] = config.skip_monomorphic
-        self.args_dct['min_var_per_w'] = config.min_var_per_w
+        # fill in default values from config if unset
+        if not 'skip_monomorphic' in self.args_dct:
+            self.args_dct['skip_monomorphic'] = config.skip_monomorphic
+        if not 'min_var_per_w' in self.args_dct:  
+            self.args_dct['min_var_per_w'] = config.min_var_per_w
+        if not 'n_prev_windows' in self.args_dct:  
+            self.args_dct['n_prev_windows'] = config.n_prev_windows
+        if not 'pol_pc' in self.args_dct:  
+            self.args_dct['pol_pc'] = config.pol_pc
+        if not 'flip_pc' in self.args_dct:  
+            self.args_dct['flip_pc'] = config.flip_pc
         #self.args_dct['min_maf'] = config.min_maf
         #self.args_dct['w_size'] = config.w_size
         #self.args_dct['w_step'] = config.w_step
         #self.args_dct['n_threads'] = config.n_threads
-        self.args_dct['n_prev_windows'] = config.n_prev_windows
         #self.args_dct['pol_mode'] = config.pol_mode
-        #self.args_dct['pol_pc'] = config.pol_pc
-        #self.args_dct['flip_pc'] = config.flip_pc
         #self.args_dct['plot_fmt'] = config.plot_fmt
         #self.args_dct['plot_chroms'] = config.plot_chroms
         #self.args_dct['plot_interval'] = config.plot_interval
