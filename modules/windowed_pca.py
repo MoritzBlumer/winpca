@@ -15,7 +15,7 @@ from modules import config
 
 ## CLASSES
 
-class GTWindowedPCA:
+class gt_wpca:
 
     '''
     Parse hard-called genotypes (GT) from TSV or VCF and apply a function.
@@ -96,7 +96,7 @@ class GTWindowedPCA:
             )
 
 
-#    @njit() ### BRING BACK
+#    @njit()                                                                        ### BRING BACK
     def gt_min_maf_filter(self):
         '''
         Drop SNPs with minor allele frequency below specified value.
@@ -147,7 +147,7 @@ class GTWindowedPCA:
         # count variants
         n_var = self.w_gt_arr.shape[0]
         
-        # count hets and missing sites per sample
+        # count missing sites per sample
         n_miss_lst = list(np.sum(self.w_gt_arr == -1, axis=0))
 
         # if # variants passes specified threshold  
@@ -162,9 +162,9 @@ class GTWindowedPCA:
                 ploidy=2,
             )
 
-            # count hets 
-            n_hets_lst = list(np.sum(self.w_gt_arr == 1, axis=0))
-
+            # calculate % het sites relative to n_var
+            hetp_lst = list(np.sum(self.w_gt_arr == 1, axis=0)/n_var)
+            
             # compile to output
             out = {
                 'pos': pos,
@@ -172,7 +172,7 @@ class GTWindowedPCA:
                 'pc_2': pca[0][:, 1],
                 'pc_1_ve': round(pca[1].explained_variance_ratio_[0]*100, 2),
                 'pc_2_ve': round(pca[1].explained_variance_ratio_[1]*100, 2),
-                'n_hets': n_hets_lst,
+                'hetp': hetp_lst,
                 'n_miss': n_miss_lst,
                 'n_var': n_var
             }
@@ -193,7 +193,7 @@ class GTWindowedPCA:
                 'pc_2': empty_lst,
                 'pc_1_ve': None,
                 'pc_2_ve': None,
-                'n_hets': empty_lst,
+                'hetp': empty_lst,
                 'n_miss': empty_lst,
                 'n_var': n_var
             }

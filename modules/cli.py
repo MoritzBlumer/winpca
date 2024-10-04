@@ -424,6 +424,11 @@ class CLI:
             self.args_dct['pol_pc'] = config.pol_pc
         if not 'flip_pc' in self.args_dct:  
             self.args_dct['flip_pc'] = config.flip_pc
+        if not 'chrom_plot_w' in self.args_dct:  
+            self.args_dct['chrom_plot_w'] = config.chrom_plot_w
+        if not 'chrom_plot_h' in self.args_dct:  
+            self.args_dct['chrom_plot_h'] = config.chrom_plot_h
+        
         #self.args_dct['min_maf'] = config.min_maf
         #self.args_dct['w_size'] = config.w_size
         #self.args_dct['w_step'] = config.w_step

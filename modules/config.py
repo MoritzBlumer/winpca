@@ -20,7 +20,8 @@ flip_pc = '1'
 
 # chromplot + genomeplot
 plot_fmt = 'both'
-color_by = 'id'
+chrom_plot_w = 1200
+chrom_plot_h = 400
 
 # genomeplot
 plot_chroms = 'all'

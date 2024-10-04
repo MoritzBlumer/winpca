@@ -9,7 +9,7 @@ import pandas as pd
 
 ## CLASSES
 
-class WPCAData:
+class wpca_data:
     '''
     Central container for PCA and associated data. Compiles object from 
     existing output files (via prefix) or directly from w_pca instance. Data
@@ -25,7 +25,7 @@ class WPCAData:
         # instance variables
         self.pc_1 = None
         self.pc_2 = None
-        self.hets = None
+        self.hetp = None
         self.miss = None
         self.stat = None
 
@@ -33,7 +33,7 @@ class WPCAData:
         self.suffix_dct = {
             'pc_1': 'pc_1.tsv.gz',
             'pc_2': 'pc_2.tsv.gz',
-            'hets': 'hets.tsv.gz',
+            'hetp': 'hetp.tsv.gz',
             'miss': 'miss.tsv.gz',
             'stat': 'stat.tsv.gz',
         }
@@ -69,15 +69,14 @@ class WPCAData:
             columns=self.w_pca_obj.sample_lst,
         )
 
-        # heterozygosity
-        self.hets = pd.DataFrame(
-            data=out_df['n_hets'].to_list(),
+        # hetp
+        self.hetp = pd.DataFrame(
+            data=out_df['hetp'].to_list(),
             index=out_df['pos'],
             columns=self.w_pca_obj.sample_lst,
-            dtype='Int64',
         )
 
-        # missingness
+        # miss
         self.miss = pd.DataFrame(
             data=out_df['n_miss'].to_list(),
             index=out_df['pos'],
@@ -103,7 +102,7 @@ class WPCAData:
         )
 
         # flush existing instance variables
-        self.pc_1, self.pc_2, self.hets, self.miss,self.stat = \
+        self.pc_1, self.pc_2, self.hetp, self.miss, self.stat = \
             None, None, None, None, None
 
         # pc_1
@@ -120,12 +119,11 @@ class WPCAData:
             index_col='pos',
         )
 
-        # hets
-        self.hets = pd.read_csv(
-            f'{self.prefix}.{self.suffix_dct["hets"]}',
+        # hetp
+        self.hetp = pd.read_csv(
+            f'{self.prefix}.{self.suffix_dct["hetp"]}',
             sep='\t', 
             index_col='pos',
-            dtype='Int64'
         )
 
         # miss
@@ -149,7 +147,7 @@ class WPCAData:
 
     def to_files(self):
         '''
-        Write output (pc_1, pc_2, hets, miss, stats) to files.
+        Write output (pc_1, pc_2, hetp, miss, stat) to files.
         '''
 
         # pc_1
@@ -162,12 +160,12 @@ class WPCAData:
             f'{self.prefix}.{self.suffix_dct["pc_2"]}', 
             sep='\t', index_label='pos', na_rep='NA')
 
-        # hets
-        self.hets.to_csv(
-            f'{self.prefix}.{self.suffix_dct["hets"]}', 
+        # hetp
+        self.hetp.to_csv(
+            f'{self.prefix}.{self.suffix_dct["hetp"]}', 
             sep='\t', index_label='pos', na_rep='NA')
 
-        # hets
+        # miss
         self.miss.to_csv(
             f'{self.prefix}.{self.suffix_dct["miss"]}', 
             sep='\t', index_label='pos', na_rep='NA')
