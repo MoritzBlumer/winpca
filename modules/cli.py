@@ -38,6 +38,10 @@ class CLI:
             '.vcf', '.vcf.gz', '.tsv', '.tsv.gz', 'beagle', 'beagle.gz',
         ]
 
+        self.plot_file_suffixes = [
+            '.html', '.pdf', '.svg', '.png',
+        ]
+
     def shared_arguments(self, subparser):
         '''
         Arguments shared between all sub-commands.
@@ -259,10 +263,9 @@ class CLI:
             default=None, metavar='\b', help='If set, only plot values for every'
             ' nth window (10 --> 10th) [default: no interval].')
         chromplot_parser.add_argument(
-            '-f', '--format', dest='file_format', required=False, metavar='\b',
-            default=config.plot_fmt, choices=['HTML', 'PDF', 'both'], 
-            help='Output plot file format ("HTML", "PDF" or "both")'
-            f' [default: {config.plot_fmt}].')
+            '-f', '--format', dest='plot_fmt', required=False, metavar='\b',
+            default=config.plot_fmt, help='Output plot file format ("HTML",'
+            ' "PDF", "SVG" or "PNG") [default: {config.plot_fmt}].')
 
 
     def genomeplot(self):
@@ -277,15 +280,11 @@ class CLI:
             ' stats for all input chromosomes.'
         )
 
-        # add shared arguments
-        self.shared_arguments(genomeplot_parser)
-
         # define subparser-specific arguments
         genomeplot_parser.add_argument(
-            '-s', '--sequences', dest='sequences', required=False, 
-            default=config.plot_chroms, metavar='\b', help='Comma-separated list'
-            ' of reference sequences IDs, e.g. chromosomes to include (or to'
-            'define plotting order) [default: all].')
+            '-p', '--prefix', dest='prefix', required=True, 
+            metavar='\b', help='Prefix shared by all chromosomes runs to'
+            ' include in genome-wide plot.')
         genomeplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', required=False, 
             metavar='\b', help='Path to metadata TSV where first column are'
@@ -304,10 +303,9 @@ class CLI:
             ' values for every nth window (10 --> 10th)'
             f' [default: {config.plot_interval}.')
         genomeplot_parser.add_argument(
-            '-f', '--format', dest='file_format', required=False, 
-            default=config.plot_fmt, choices=['HTML', 'PDF', 'both'], 
-            help='Output plot file format ("HTML", "PDF" or "both")'
-            f' [default: {config.plot_fmt}].')
+            '-f', '--format', dest='plot_fmt', required=False, metavar='\b',
+            default=config.plot_fmt, help='Output plot file format ("HTML",'
+            ' "PDF", "SVG" or "PNG") [default: {config.plot_fmt}].')
 
 
     def parse_args(self):
@@ -318,8 +316,6 @@ class CLI:
         # parse arguments
         args = self.parser.parse_args()
         
-        print(args) ### DELETE
-
         # handle interdependent options
         if hasattr(args, 'polarize') and args.polarize == 'guide_samples':
             if not args.guide_samples:
@@ -392,9 +388,23 @@ class CLI:
                     hex_code_dct[group] = '#' + hex_code
             else:
                 hex_code_dct = None
+        if hasattr(args, 'plot_fmt'):
+            if ',' in args.plot_fmt:
+                args.plot_fmt = args.plot_fmt.split(',')
+            else:
+                args.plot_fmt = [args.plot_fmt]
+            args.plot_fmt = [x.lower() for x in args.plot_fmt]
         if hasattr(args, 'sequences'):
-            sequence_lst = args.sequences.split(',')
+            sequence_lst = args.sequences.split(',')                            ### NECESSARY?
 
+        # further checks
+        if hasattr(args, 'plot_fmt'):
+            for fmt in args.plot_fmt:
+                if '.' + fmt not in self.plot_file_suffixes:
+                    self.parser.error(
+                        f'"{fmt}" is not supported as output format.')
+
+        print(args)                                                             ### DELETE
 
         # convert args to dict and add to class as instance variable
         self.args_dct = vars(args)
@@ -428,6 +438,8 @@ class CLI:
             self.args_dct['chrom_plot_w'] = config.chrom_plot_w
         if not 'chrom_plot_h' in self.args_dct:  
             self.args_dct['chrom_plot_h'] = config.chrom_plot_h
+        # if not 'plot_fmt' in self.args_dct:  
+        #     self.args_dct['plot_fmt'] = config.plot_fmt
         
         #self.args_dct['min_maf'] = config.min_maf
         #self.args_dct['w_size'] = config.w_size
@@ -456,7 +468,7 @@ class CLI:
 # color_by
 # hex_codes
 # interval
-# file_format
+# plot_fmt
 
 
 

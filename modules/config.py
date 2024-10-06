@@ -19,10 +19,7 @@ pol_pc = 'both'
 flip_pc = '1'
 
 # chromplot + genomeplot
-plot_fmt = 'both'
+plot_fmt = 'html'
+plot_interval = None
 chrom_plot_w = 1200
 chrom_plot_h = 400
-
-# genomeplot
-plot_chroms = 'all'
-plot_interval = 100
