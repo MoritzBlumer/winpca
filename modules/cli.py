@@ -282,9 +282,14 @@ class CLI:
 
         # define subparser-specific arguments
         genomeplot_parser.add_argument(
-            '-p', '--prefix', dest='prefix', required=True, 
+            '-p', '--prefix', dest='run_prefix', required=True, 
             metavar='\b', help='Prefix shared by all chromosomes runs to'
             ' include in genome-wide plot.')
+        genomeplot_parser.add_argument(
+            '-r', '--run_ids', dest='run_ids', required=True, 
+            metavar='\b', help='Comma-separated list of run IDs to include,'
+            ' format: e.g. {prefix}.{run_id}.pc_1.tsv.gz. Also used to'
+            ' determine plotting order.')
         genomeplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', required=False, 
             metavar='\b', help='Path to metadata TSV where first column are'
@@ -346,22 +351,12 @@ class CLI:
                     + ' to specify genomic coordinates correctly:'
                     + ' chrom:start-end (start and end must always be'
                     + ' specified).' )
+        if hasattr(args, 'run_ids'):
+            if not ',' in args.run_ids:
+                self.parser.error(
+                    'Please provide at least two sequences as a comma-separated'
+                    ' list.' )
         
-        # check if files exist
-        if hasattr(args, 'variant_file_path'):
-            if not os.path.exists(args.variant_file_path):
-                self.parser.error(
-                    args.variant_file_path + ': file does not exist.')
-        if hasattr(args, 'metadata_path') and args.metadata_path:
-            if not os.path.exists(args.metadata_path):
-                self.parser.error(
-                    args.metadata_path + ': file does not exist.')
-        if hasattr(args, 'samples'):
-            if not ',' in args.samples:
-                if not os.path.exists(args.samples):
-                    self.parser.error(
-                        args.samples + ': file does not exist.')
-                
         # decompose/preprocess arguments      
         if hasattr(args, 'region'):
             chrom = args.region.split(':')[0]
@@ -390,19 +385,40 @@ class CLI:
                 hex_code_dct = None
         if hasattr(args, 'plot_fmt'):
             if ',' in args.plot_fmt:
-                args.plot_fmt = args.plot_fmt.split(',')
+                plot_fmt_lst = args.plot_fmt.split(',')
             else:
-                args.plot_fmt = [args.plot_fmt]
-            args.plot_fmt = [x.lower() for x in args.plot_fmt]
-        if hasattr(args, 'sequences'):
-            sequence_lst = args.sequences.split(',')                            ### NECESSARY?
+                plot_fmt_lst = [args.plot_fmt]
+            plot_fmt_lst = [x.lower() for x in plot_fmt_lst]
+        if hasattr(args, 'run_ids'):
+            run_id_lst = args.run_ids.split(',')
 
         # further checks
         if hasattr(args, 'plot_fmt'):
-            for fmt in args.plot_fmt:
+            for fmt in plot_fmt_lst:
                 if '.' + fmt not in self.plot_file_suffixes:
                     self.parser.error(
                         f'"{fmt}" is not supported as output format.')
+
+        # check if files exist
+        if hasattr(args, 'variant_file_path'):
+            if not os.path.exists(args.variant_file_path):
+                self.parser.error(
+                    args.variant_file_path + ': file does not exist.')
+        if hasattr(args, 'metadata_path') and args.metadata_path:
+            if not os.path.exists(args.metadata_path):
+                self.parser.error(
+                    args.metadata_path + ': file does not exist.')
+        if hasattr(args, 'samples'):
+            if not ',' in args.samples:
+                if not os.path.exists(args.samples):
+                    self.parser.error(
+                        args.samples + ': file does not exist.')
+        if hasattr(args, 'run_ids'):
+            for r_id in run_id_lst:
+                 if not os.path.exists(f'{args.run_prefix}{r_id}.pc_1.tsv.gz'):
+                    self.parser.error(
+                        f'{args.run_prefix}{r_id}: run does not exist or is'
+                        ' incomplete.')
 
         print(args)                                                             ### DELETE
 
@@ -420,8 +436,10 @@ class CLI:
             self.args_dct['guide_sample_lst'] = guide_sample_lst
         if hasattr(args, 'hex_codes'):
             self.args_dct['hex_code_dct'] = hex_code_dct
-        if hasattr(args, 'sequences'):
-            self.args_dct['sequence_lst'] = sequence_lst
+        if hasattr(args, 'plot_fmt'):
+            self.args_dct['plot_fmt_lst'] = plot_fmt_lst
+        if hasattr(args, 'run_ids'):
+            self.args_dct['run_id_lst'] = run_id_lst
         
         # fill in default values from config if unset
         if not 'skip_monomorphic' in self.args_dct:
@@ -438,8 +456,6 @@ class CLI:
             self.args_dct['chrom_plot_w'] = config.chrom_plot_w
         if not 'chrom_plot_h' in self.args_dct:  
             self.args_dct['chrom_plot_h'] = config.chrom_plot_h
-        # if not 'plot_fmt' in self.args_dct:  
-        #     self.args_dct['plot_fmt'] = config.plot_fmt
         
         #self.args_dct['min_maf'] = config.min_maf
         #self.args_dct['w_size'] = config.w_size
