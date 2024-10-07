@@ -221,7 +221,18 @@ class CLI:
 
         # define subparser-specific arguments
         flip_parser.add_argument(
-            '-c', '--principal_component', dest='flip_pc', required=True, 
+            '-w', '--windows', dest='flip_windows', required=False, 
+            metavar='\b', help='Comma-separated list of positions'
+            ' (e.g. 100000) or regions (100000-250000) to flip or file with'
+            ' one position/region per line.')
+        flip_parser.add_argument(
+            '--r', '--reflect', dest='reflect', required=False,
+            action='store_true', help='Set flag to flip all windows, i.e.'
+            ' reflect all values of the target chromosome. --r/--reflect is'
+            ' applied independently from -w/--windows, i.e. they can be'
+            ' combined.')
+        flip_parser.add_argument(
+            '-c', '--principal_component', dest='flip_pc', required=False, 
             choices=['1', '2', 'both'], default=config.flip_pc, metavar='\b', 
             help='Specify which PC to flip ("1", "2" or "both")'
             f' [default: {config.flip_pc}].')
@@ -333,6 +344,9 @@ class CLI:
         if hasattr(args, 'hex_codes') and not hasattr(args, 'color_by'):
             self.parser.error(
                 '-g/--groups is required if -c/--colors is set.')
+        if not not args.reflect and not hasattr(args, 'flip_windows'):
+            self.parser.error(
+                'One of --r/--reflect and -w,-windows must be set.')
 
         # check formatting
         if hasattr(args, 'variant_file_path'):
@@ -366,10 +380,25 @@ class CLI:
             if ',' in args.samples:
                 sample_lst = args.samples.split(',')
             else:
-                sample_lst = []
-                with open(args.samples, 'r') as sample_file:
-                    for line in sample_file:
-                       sample_lst.append(line.strip().split('\t')[0])
+                if not os.path.exists(args.samples):
+                    self.parser.error(
+                        args.samples + ': file does not exist.')
+                else:
+                    sample_lst = []
+                    with open(args.samples, 'r') as sample_file:
+                        for line in sample_file:
+                            sample_lst.append(line.strip().split('\t')[0])
+        if hasattr(args, 'flip_windows') and not args.flip_windows == None:
+            if ',' in args.flip_windows:
+                flip_window_lst = args.flip_windows.split(',')
+            else:
+                if os.path.exists(args.flip_windows):
+                    flip_window_lst = []
+                    with open(args.flip_windows, 'r') as flip_windows_file:
+                        for line in flip_windows_file:
+                            flip_window_lst.append(line.strip().split('\t')[0])
+                else:
+                    flip_window_lst = [args.flip_windows]
         if hasattr(args, 'guide_samples'):
             if args.guide_samples:
                 guide_sample_lst = args.guide_samples.split(',')
@@ -408,11 +437,6 @@ class CLI:
             if not os.path.exists(args.metadata_path):
                 self.parser.error(
                     args.metadata_path + ': file does not exist.')
-        if hasattr(args, 'samples'):
-            if not ',' in args.samples:
-                if not os.path.exists(args.samples):
-                    self.parser.error(
-                        args.samples + ': file does not exist.')
         if hasattr(args, 'run_ids'):
             for r_id in run_id_lst:
                  if not os.path.exists(f'{args.run_prefix}{r_id}.pc_1.tsv.gz'):
@@ -440,6 +464,8 @@ class CLI:
             self.args_dct['plot_fmt_lst'] = plot_fmt_lst
         if hasattr(args, 'run_ids'):
             self.args_dct['run_id_lst'] = run_id_lst
+        if hasattr(args, 'flip_window_lst'):
+            self.args_dct['flip_window_lst'] = flip_window_lst
         
         # fill in default values from config if unset
         if not 'skip_monomorphic' in self.args_dct:

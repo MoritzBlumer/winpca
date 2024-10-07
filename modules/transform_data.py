@@ -3,6 +3,7 @@ Modifications of PC data.
 '''
 
 # IMPORT PACKAGES
+import sys
 import numpy as np
 
 
@@ -187,13 +188,44 @@ class Flip:
         '''
         
         return pc_df * -1
-    
+
+
     def flip_windows(self, pc_df, coord_lst):
         '''
-        Flip specifiec windows.
+        Flip specific windows.
         '''
         
-        pass
+        # infer step size
+        w_step = pc_df.index[1] - pc_df.index[0]
+
+        # iterate specified flip regions
+        w_flip_lst = []
+        for record in coord_lst:
+
+            # expand regions 
+            if '-' in record:
+                start = int(record.split('-')[0])
+                end = int(record.split('-')[1])
+                w_flip_lst += list(range(start, end, w_step)) + [end]
+            else:
+                w_flip_lst.append(record)
+
+        # check if all windows are in the index, else print error
+        missing_lst = []
+        for w in w_flip_lst:
+            if w not in pc_df.index:
+                missing_lst.append(w)
+        if missing_lst == []:
+            print('\n[ERROR] The following windows are not represented in the' 
+                  + f' supplied data: {','.join(missing_lst)}.', 
+                file=sys.stderr)
+            sys.exit()
+        
+        # flip windows
+        pc_df.loc[w_flip_lst] *= -1
+
+        return pc_df
+        
 
     
         

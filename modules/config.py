@@ -23,3 +23,5 @@ plot_fmt = 'html'
 plot_interval = None
 chrom_plot_w = 1200
 chrom_plot_h = 400
+genome_plot_w = 1200
+genome_plot_h = 300
