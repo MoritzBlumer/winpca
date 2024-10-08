@@ -1,27 +1,29 @@
-## DEFAULT SETTINGS
+'''
+Default settings.
+'''
 
 # pca + pcangsd
-skip_monomorphic=False
-min_var_per_w = 25
-min_maf = 0.01
-w_size = 1000000
-w_step = 10000
+SKIP_MONOMORPHIC=False
+MIN_VAR_PER_W = 25
+MIN_MAF = 0.01
+W_SIZE = 1000000
+W_STEP = 10000
 
 # pcangsd
-n_threads = 2
+N_THREADS = 2
 
 # polarize
-n_prev_windows = 5
-pol_mode = 'auto'
-pol_pc = 'both'
+N_PREV_WINDOWS = 5
+POL_MODE = 'auto'
+POL_PC = 'both'
 
 # flip
-flip_pc = '1'
+FLIP_PC = '1'
 
 # chromplot + genomeplot
-plot_fmt = 'html'
-plot_interval = None
-chrom_plot_w = 1200
-chrom_plot_h = 400
-genome_plot_w = 1200
-genome_plot_h = 300
+PLOT_FMT = 'html'
+PLOT_INTERVAL = None
+CHROMPLOT_W = 1200
+CHROMPLOT_H = 400
+GENOMEPLOT_W = 1200
+GENOMEPLOT_H = 300

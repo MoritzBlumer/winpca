@@ -3,15 +3,15 @@ Central class to store, read, write and modify PCA and associated data.
 '''
 
 # IMPORT PACKAGES
-import sys
+import sys, os
 import pandas as pd
 
 
 ## CLASSES
 
-class wpca_data:
+class WPCA_Data:
     '''
-    Central container for PCA and associated data. Compiles object from 
+    Central container for PCA and associated data. Compiles object from
     existing output files (via prefix) or directly from w_pca instance. Data
     can be modified through indluded modifier methods.
     '''
@@ -44,7 +44,7 @@ class wpca_data:
 
         # compile object from files
         else:
-           self.from_files() 
+            self.from_files()
 
 
     def from_w_pca(self):
@@ -108,28 +108,28 @@ class wpca_data:
         # pc_1
         self.pc_1 = pd.read_csv(
             f'{self.prefix}.{self.suffix_dct["pc_2"]}',
-            sep='\t', 
+            sep='\t',
             index_col='pos',
         )
 
         # pc_2
         self.pc_2 = pd.read_csv(
             f'{self.prefix}.{self.suffix_dct["pc_1"]}',
-            sep='\t', 
+            sep='\t',
             index_col='pos',
         )
 
         # hetp
         self.hetp = pd.read_csv(
             f'{self.prefix}.{self.suffix_dct["hetp"]}',
-            sep='\t', 
+            sep='\t',
             index_col='pos',
         )
 
         # miss
         self.miss = pd.read_csv(
             f'{self.prefix}.{self.suffix_dct["miss"]}',
-            sep='\t', 
+            sep='\t',
             index_col='pos',
             dtype='Int64'
         )
@@ -137,12 +137,9 @@ class wpca_data:
         # stat
         self.stat = pd.read_csv(
             f'{self.prefix}.{self.suffix_dct["stat"]}',
-            sep='\t', 
+            sep='\t',
             index_col='pos',
         )
-
-        # [...]
-        pass
 
 
     def to_files(self):
@@ -150,31 +147,36 @@ class wpca_data:
         Write output (pc_1, pc_2, hetp, miss, stat) to files.
         '''
 
+        # create output directory if prefix contains '/'
+        if '/' in self.prefix:
+            if not os.path.exists('/'.join(self.prefix.split('/')[0:-1]) + '/'):
+                os.makedirs('/'.join(self.prefix.split('/')[0:-1]) + '/')
+
         # pc_1
         self.pc_1.to_csv(
-            f'{self.prefix}.{self.suffix_dct["pc_1"]}', 
+            f'{self.prefix}.{self.suffix_dct["pc_1"]}',
             sep='\t', index_label='pos', na_rep='NA')
-        
+
         # pc_2
         self.pc_2.to_csv(
-            f'{self.prefix}.{self.suffix_dct["pc_2"]}', 
+            f'{self.prefix}.{self.suffix_dct["pc_2"]}',
             sep='\t', index_label='pos', na_rep='NA')
 
         # hetp
         self.hetp.to_csv(
-            f'{self.prefix}.{self.suffix_dct["hetp"]}', 
+            f'{self.prefix}.{self.suffix_dct["hetp"]}',
             sep='\t', index_label='pos', na_rep='NA')
 
         # miss
         self.miss.to_csv(
-            f'{self.prefix}.{self.suffix_dct["miss"]}', 
+            f'{self.prefix}.{self.suffix_dct["miss"]}',
             sep='\t', index_label='pos', na_rep='NA')
 
         # stat
         self.stat.to_csv(
-            f'{self.prefix}.{self.suffix_dct["stat"]}', 
+            f'{self.prefix}.{self.suffix_dct["stat"]}',
             sep='\t', index_label='pos', na_rep='NA')
-        
+
 
     def modify_data(self, attr_name, mod_func, *args):
         '''

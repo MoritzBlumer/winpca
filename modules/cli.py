@@ -9,7 +9,7 @@ import os
 # IMPORT MODULES
 from modules import config
 
-print(config.min_maf)
+
 ## CLASSES
 
 class CLI:
@@ -42,15 +42,16 @@ class CLI:
             '.html', '.pdf', '.svg', '.png',
         ]
 
-    def shared_arguments(self, subparser):
+    @staticmethod
+    def shared_arguments(subparser):
         '''
         Arguments shared between all sub-commands.
         '''
         # define arguments that are shared across all subparsers
         subparser.add_argument(
-            '-n', '--name', dest='prefix', required=True, metavar='\b', 
+            '-n', '--name', dest='prefix', required=True, metavar='\b',
             help='Name of the run, i.e. prefix for all results generated in'
-            ' this WinPCA analysis.')  
+            ' this WinPCA analysis.')
 
 
     def pca(self):
@@ -77,32 +78,32 @@ class CLI:
             ' (optionally gzipped) TSV file with genotypes (see README for'
             ' specifications).')
         pca_parser.add_argument(
-            '-r', '--region', dest='region', required=True, metavar='\b', 
+            '-r', '--region', dest='region', required=True, metavar='\b',
             help='Genomic region in format "chrom:start-end".')
         pca_parser.add_argument(
             '-s', '--samples', dest='samples', required=False, metavar='\b',
             help='Comma-separated list of samples to include or file with one'
             ' sample per line.')
         pca_parser.add_argument(
-            '-w', '--window_size', dest='w_size', required=False, type=int, 
-            default=config.w_size, metavar='\b', help='Window size in base pairs'
-            f' (bp) [default: {config.w_size}].')
+            '-w', '--window_size', dest='w_size', required=False, type=int,
+            default=config.W_SIZE, metavar='\b', help='Window size in base'
+            f' pairs (bp) [default: {config.W_SIZE}].')
         pca_parser.add_argument(
             '-i', '--increment', dest='w_step', required=False, type=int,
-            default=config.w_step, metavar='\b', help='Step size in base pairs'
-            f' (bp). [default: {config.w_step}].')
+            default=config.W_STEP, metavar='\b', help='Step size in base pairs'
+            f' (bp). [default: {config.W_STEP}].')
         pca_parser.add_argument(
-            '-m', '--min_maf', dest='min_maf', required=False, type=float, 
-            default=config.min_maf, metavar='\b', help='Minor allele frequency'
-            f' threshold [default: {config.min_maf}].')
+            '-m', '--min_maf', dest='min_maf', required=False, type=float,
+            default=config.MIN_MAF, metavar='\b', help='Minor allele frequency'
+            f' threshold [default: {config.MIN_MAF}].')
         pca_parser.add_argument(
-            '-p', '--polarize', dest='polarize', required=False, 
-            default=config.pol_mode, choices=['auto', 'guide_samples', 'skip'], 
+            '-p', '--polarize', dest='polarize', required=False,
+            default=config.POL_MODE, choices=['auto', 'guide_samples', 'skip'],
             metavar='\b', help='Sign polarization strategy'
             ' ("auto"/"guide_samples" or "skip") [default:'
-            f' "{config.pol_mode}"].')
+            f' "{config.POL_MODE}"].')
         pca_parser.add_argument(
-            '-g', '--guide_samples', dest='guide_samples', required=False, 
+            '-g', '--guide_samples', dest='guide_samples', required=False,
             metavar='\b', help='Applies only if "guide_samples" is selected for'
             ' -p/--polarize: One or more (-> comma-separated list) samples to'
             ' guide PC sign polarization.')
@@ -124,17 +125,18 @@ class CLI:
         # define subparser-specific arguments
         variant_file = pcangsd_parser.add_mutually_exclusive_group(required=True)
         variant_file.add_argument(
-            '-v', '--vcf', dest='variant_file_path', metavar='\b', help='Path to'
-            ' (optionally gzipped) VCF file with GL or PL field.')
+            '-v', '--vcf', dest='variant_file_path', metavar='\b', help='Path'
+            ' to (optionally gzipped) VCF file with GL or PL field.')
         variant_file.add_argument(
-            '-b', '--beagle', dest='variant_file_path', metavar='\b', help='Path'
-            ' to (optionally gzipped) BEAGLE file with GL or PL values.')
+            '-b', '--beagle', dest='variant_file_path', metavar='\b',
+            help='Path to (optionally gzipped) BEAGLE file with GL or PL'
+            ' values.')
         variant_file.add_argument(
-            '-t', '--tsv', dest='variant_file_path', metavar='\b', help='Path to'
-            ' (optionally gzipped) TSV file with GL or PL values (see README'
+            '-t', '--tsv', dest='variant_file_path', metavar='\b', help='Path'
+            ' to (optionally gzipped) TSV file with GL or PL values (see README'
             ' for specifications).')
         pcangsd_parser.add_argument(
-            '-f', '--format', dest='gl_format', required=True, 
+            '-f', '--format', dest='gl_format', required=True,
             choices=['GL', 'PL'], metavar='\b', help='Genotype likelihood'
             ' format ("GL" or "PL").')
         pcangsd_parser.add_argument(
@@ -145,32 +147,32 @@ class CLI:
             help='Comma-separated list of samples to include or file with one'
             ' sample per line.')
         pcangsd_parser.add_argument(
-            '-w', '--window_size', dest='w_size', required=False, type=int, 
-            default=config.w_step, metavar='\b', help='Window size in base pairs'
-            f' (bp) [default: {config.w_size}].')
+            '-w', '--window_size', dest='w_size', required=False, type=int,
+            default=config.W_SIZE, metavar='\b', help='Window size in base pairs'
+            f' (bp) [default: {config.W_SIZE}].')
         pcangsd_parser.add_argument(
             '-i', '--increment', dest='w_step', required=False, type=int,
-            default=config.w_step, metavar='\b', help='Step size in base pairs'
-            f' (bp). [default: {config.w_step}].')
+            default=config.W_STEP, metavar='\b', help='Step size in base pairs'
+            f' (bp). [default: {config.W_STEP}].')
         pcangsd_parser.add_argument(
-            '-m', '--min_maf', dest='min_maf', required=False, type=float, 
-            default=config.min_maf, metavar='\b', help='Minor allele frequency'
-            f' threshold [default: {config.min_maf}].')
+            '-m', '--min_maf', dest='min_maf', required=False, type=float,
+            default=config.MIN_MAF, metavar='\b', help='Minor allele frequency'
+            f' threshold [default: {config.MIN_MAF}].')
         pcangsd_parser.add_argument(
-            '-p', '--polarize', dest='polarize', required=False, 
-            default=config.pol_mode, choices=['auto', 'guide_samples', 'skip'], 
+            '-p', '--polarize', dest='polarize', required=False,
+            default=config.POL_MODE, choices=['auto', 'guide_samples', 'skip'],
             metavar='\b', help='Sign polarization strategy'
             ' ("auto"/"guide_samples" or "skip") [default:'
-            f' "{config.pol_mode}"].')
+            f' "{config.POL_MODE}"].')
         pcangsd_parser.add_argument(
-            '-g', '--guide_samples', dest='guide_samples', required=False, 
+            '-g', '--guide_samples', dest='guide_samples', required=False,
             metavar='\b', help='Applies only if "guide_samples" is selected for'
             ' -p/--polarize: One or more (-> comma-separated list) samples to'
             ' guide PC sign polarization.')
         pcangsd_parser.add_argument(
-            '-@', '--threads', dest='threads', required=False, type=int, 
-            default=config.n_threads, metavar='\b', help='Number of threads'
-            f' [default: {config.n_threads}].')
+            '-@', '--threads', dest='threads', required=False, type=int,
+            default=config.N_THREADS, metavar='\b', help='Number of threads'
+            f' [default: {config.N_THREADS}].')
 
 
     def polarize(self):
@@ -189,16 +191,16 @@ class CLI:
 
         # define subparser-specific arguments
         polarize_parser.add_argument(
-            '-c', '--principal_component', dest='pol_pc', required=False, 
+            '-c', '--principal_component', dest='pol_pc', required=False,
             choices=['1', '2', 'both'], default=1, metavar='\b', help='Specify'
-            f' which PC to re-polarize ("1", "2" or "both") [default: 1].')
+            ' which PC to re-polarize ("1", "2" or "both") [default: 1].')
         polarize_parser.add_argument(
             '-p', '--polarize', dest='polarize', required=False,
-            default=config.pol_mode, choices=['auto', 'guide_samples'], 
+            default=config.POL_MODE, choices=['auto', 'guide_samples'],
             metavar='\b', help='Sign polarization strategy ("auto" or'
-            f' "guide_samples") [default: {config.pol_mode}].')
+            f' "guide_samples") [default: {config.POL_MODE}].')
         polarize_parser.add_argument(
-            '-g', '--guide_samples', dest='guide_samples', required=False, 
+            '-g', '--guide_samples', dest='guide_samples', required=False,
             metavar='\b', help='Applies only if "guide_samples" is selected for'
             ' -p/--polarize: One or more (-> comma-separated list) samples to'
             ' guide PC sign polarization.')
@@ -221,7 +223,7 @@ class CLI:
 
         # define subparser-specific arguments
         flip_parser.add_argument(
-            '-w', '--windows', dest='flip_windows', required=False, 
+            '-w', '--windows', dest='flip_windows', required=False,
             metavar='\b', help='Comma-separated list of positions'
             ' (e.g. 100000) or regions (100000-250000) to flip or file with'
             ' one position/region per line.')
@@ -232,15 +234,15 @@ class CLI:
             ' applied independently from -w/--windows, i.e. they can be'
             ' combined.')
         flip_parser.add_argument(
-            '-c', '--principal_component', dest='flip_pc', required=False, 
-            choices=['1', '2', 'both'], default=config.flip_pc, metavar='\b', 
+            '-c', '--principal_component', dest='flip_pc', required=False,
+            choices=['1', '2', 'both'], default=config.FLIP_PC, metavar='\b',
             help='Specify which PC to flip ("1", "2" or "both")'
-            f' [default: {config.flip_pc}].')
+            f' [default: {config.FLIP_PC}].')
 
 
     def chromplot(self):
         '''
-        Plot PC1, PC2, heterozygosity and per window stats for all input 
+        Plot PC1, PC2, heterozygosity and per window stats for all input
         chromosomes.
         '''
 
@@ -258,7 +260,7 @@ class CLI:
             '-r', '--region', dest='region', required=True, metavar='\b',
             help='Genomic region in format "chrom:start-end".')
         chromplot_parser.add_argument(
-            '-m', '--metadata', dest='metadata_path', required=False, 
+            '-m', '--metadata', dest='metadata_path', required=False,
             metavar='\b', help='Path to metadata TSV where first column are '
             ' sample names. Other columns will be used to annotate data in HTML'
             ' plot.')
@@ -270,18 +272,18 @@ class CLI:
             help='HEX codes (drop "#") for color groups. Check documentation'
             ' for formatting instructions. Requires -g/--groups.')
         chromplot_parser.add_argument(
-            '-i', '--interval', dest='interval', required=False, type=int, 
+            '-i', '--interval', dest='interval', required=False, type=int,
             default=None, metavar='\b', help='If set, only plot values for every'
             ' nth window (10 --> 10th) [default: no interval].')
         chromplot_parser.add_argument(
             '-f', '--format', dest='plot_fmt', required=False, metavar='\b',
-            default=config.plot_fmt, help='Output plot file format ("HTML",'
-            ' "PDF", "SVG" or "PNG") [default: {config.plot_fmt}].')
+            default=config.PLOT_FMT, help='Output plot file format ("HTML",'
+            ' "PDF", "SVG" or "PNG") [default: {config.PLOT_FMT}].')
 
 
     def genomeplot(self):
         '''
-        Plot PC1, PC2, heterozygosity and per window stats for all input 
+        Plot PC1, PC2, heterozygosity and per window stats for all input
         chromosomes.
         '''
 
@@ -293,16 +295,16 @@ class CLI:
 
         # define subparser-specific arguments
         genomeplot_parser.add_argument(
-            '-p', '--prefix', dest='run_prefix', required=True, 
+            '-p', '--prefix', dest='run_prefix', required=True,
             metavar='\b', help='Prefix shared by all chromosomes runs to'
             ' include in genome-wide plot.')
         genomeplot_parser.add_argument(
-            '-r', '--run_ids', dest='run_ids', required=True, 
+            '-r', '--run_ids', dest='run_ids', required=True,
             metavar='\b', help='Comma-separated list of run IDs to include,'
             ' format: e.g. {prefix}.{run_id}.pc_1.tsv.gz. Also used to'
             ' determine plotting order.')
         genomeplot_parser.add_argument(
-            '-m', '--metadata', dest='metadata_path', required=False, 
+            '-m', '--metadata', dest='metadata_path', required=False,
             metavar='\b', help='Path to metadata TSV where first column are'
             ' sample names. Other columns will be used to annotate data in HTML'
             ' plot.')
@@ -314,14 +316,14 @@ class CLI:
             help='HEX codes (drop "#") for color groups. Check documentation'
             ' for formatting instructions. Requires -g/--groups.')
         genomeplot_parser.add_argument(
-            '-i', '--interval', dest='interval', required=False, type=int, 
-            default=config.plot_interval, metavar='\b', help='If set, only plot'
+            '-i', '--interval', dest='interval', required=False, type=int,
+            default=config.PLOT_INTERVAL, metavar='\b', help='If set, only plot'
             ' values for every nth window (10 --> 10th)'
-            f' [default: {config.plot_interval}.')
+            f' [default: {config.PLOT_INTERVAL}.')
         genomeplot_parser.add_argument(
             '-f', '--format', dest='plot_fmt', required=False, metavar='\b',
-            default=config.plot_fmt, help='Output plot file format ("HTML",'
-            ' "PDF", "SVG" or "PNG") [default: {config.plot_fmt}].')
+            default=config.PLOT_FMT, help='Output plot file format ("HTML",'
+            ' "PDF", "SVG" or "PNG") [default: {config.PLOT_FMT}].')
 
 
     def parse_args(self):
@@ -331,7 +333,7 @@ class CLI:
 
         # parse arguments
         args = self.parser.parse_args()
-        
+
         # handle interdependent options
         if hasattr(args, 'polarize') and args.polarize == 'guide_samples':
             if not args.guide_samples:
@@ -340,11 +342,11 @@ class CLI:
                     ' "guide_samples" as polarization strategy (-p)')
         if hasattr(args, 'color_by') and not hasattr(args, 'metadata_path'):
             self.parser.error(
-                '-m/--metadata is required to infer -g/--groups.')        
+                '-m/--metadata is required to infer -g/--groups.')
         if hasattr(args, 'hex_codes') and not hasattr(args, 'color_by'):
             self.parser.error(
                 '-g/--groups is required if -c/--colors is set.')
-        if not not args.reflect and not hasattr(args, 'flip_windows'):
+        if not args.reflect and not hasattr(args, 'flip_windows'):
             self.parser.error(
                 'One of --r/--reflect and -w,-windows must be set.')
 
@@ -370,8 +372,8 @@ class CLI:
                 self.parser.error(
                     'Please provide at least two sequences as a comma-separated'
                     ' list.' )
-        
-        # decompose/preprocess arguments      
+
+        # decompose/preprocess arguments
         if hasattr(args, 'region'):
             chrom = args.region.split(':')[0]
             start = int(args.region.split(':')[1].split('-')[0])
@@ -388,7 +390,7 @@ class CLI:
                     with open(args.samples, 'r') as sample_file:
                         for line in sample_file:
                             sample_lst.append(line.strip().split('\t')[0])
-        if hasattr(args, 'flip_windows') and not args.flip_windows == None:
+        if hasattr(args, 'flip_windows') and not args.flip_windows is None:
             if ',' in args.flip_windows:
                 flip_window_lst = args.flip_windows.split(',')
             else:
@@ -439,12 +441,10 @@ class CLI:
                     args.metadata_path + ': file does not exist.')
         if hasattr(args, 'run_ids'):
             for r_id in run_id_lst:
-                 if not os.path.exists(f'{args.run_prefix}{r_id}.pc_1.tsv.gz'):
+                if not os.path.exists(f'{args.run_prefix}{r_id}.pc_1.tsv.gz'):
                     self.parser.error(
                         f'{args.run_prefix}{r_id}: run does not exist or is'
                         ' incomplete.')
-
-        print(args)                                                             ### DELETE
 
         # convert args to dict and add to class as instance variable
         self.args_dct = vars(args)
@@ -464,53 +464,25 @@ class CLI:
             self.args_dct['plot_fmt_lst'] = plot_fmt_lst
         if hasattr(args, 'run_ids'):
             self.args_dct['run_id_lst'] = run_id_lst
-        if hasattr(args, 'flip_window_lst'):
+        if hasattr(args, 'flip_windows'):
             self.args_dct['flip_window_lst'] = flip_window_lst
-        
+
         # fill in default values from config if unset
         if not 'skip_monomorphic' in self.args_dct:
-            self.args_dct['skip_monomorphic'] = config.skip_monomorphic
-        if not 'min_var_per_w' in self.args_dct:  
-            self.args_dct['min_var_per_w'] = config.min_var_per_w
-        if not 'n_prev_windows' in self.args_dct:  
-            self.args_dct['n_prev_windows'] = config.n_prev_windows
-        if not 'pol_pc' in self.args_dct:  
-            self.args_dct['pol_pc'] = config.pol_pc
-        if not 'flip_pc' in self.args_dct:  
-            self.args_dct['flip_pc'] = config.flip_pc
-        if not 'chrom_plot_w' in self.args_dct:  
-            self.args_dct['chrom_plot_w'] = config.chrom_plot_w
-        if not 'chrom_plot_h' in self.args_dct:  
-            self.args_dct['chrom_plot_h'] = config.chrom_plot_h
-        
-        #self.args_dct['min_maf'] = config.min_maf
-        #self.args_dct['w_size'] = config.w_size
-        #self.args_dct['w_step'] = config.w_step
-        #self.args_dct['n_threads'] = config.n_threads
-        #self.args_dct['pol_mode'] = config.pol_mode
-        #self.args_dct['plot_fmt'] = config.plot_fmt
-        #self.args_dct['plot_chroms'] = config.plot_chroms
-        #self.args_dct['plot_interval'] = config.plot_interval
-
-    
-# region
-# samples
-# w_size
-# w_step
-# min_maf
-# polarize
-# guide_samples
-# gl_format
-# threads
-# pc
-# polarize
-# sequence
-# sequences
-# metadata_path
-# color_by
-# hex_codes
-# interval
-# plot_fmt
-
-
-
+            self.args_dct['skip_monomorphic'] = config.SKIP_MONOMORPHIC
+        if not 'min_var_per_w' in self.args_dct:
+            self.args_dct['min_var_per_w'] = config.MIN_VAR_PER_W
+        if not 'n_prev_windows' in self.args_dct:
+            self.args_dct['n_prev_windows'] = config.N_PREV_WINDOWS
+        if not 'pol_pc' in self.args_dct:
+            self.args_dct['pol_pc'] = config.POL_PC
+        if not 'flip_pc' in self.args_dct:
+            self.args_dct['flip_pc'] = config.FLIP_PC
+        if not 'chromplot_w' in self.args_dct:
+            self.args_dct['chromplot_w'] = config.CHROMPLOT_W
+        if not 'chromplot_h' in self.args_dct:
+            self.args_dct['chromplot_h'] = config.CHROMPLOT_H
+        if not 'genomeplot_w' in self.args_dct:
+            self.args_dct['genomeplot_w'] = config.GENOMEPLOT_W
+        if not 'genomeplot_h' in self.args_dct:
+            self.args_dct['genomeplot_h'] = config.GENOMEPLOT_H
