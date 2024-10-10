@@ -2,8 +2,9 @@
 Central class to store, read, write and modify PCA and associated data.
 '''
 
-# IMPORT PACKAGES
-import sys, os
+## IMPORT PACKAGES
+import sys
+import os
 import pandas as pd
 
 

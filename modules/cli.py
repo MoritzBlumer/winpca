@@ -2,12 +2,10 @@
 Command line interface.
 '''
 
-# IMPORT PACKAGES
-import argparse
+## IMPORT PACKAGES
 import os
-
-# IMPORT MODULES
-from modules import config
+import argparse
+from modules import config                                                      ### DELETE
 
 
 ## CLASSES
@@ -23,6 +21,7 @@ class CLI:
         self.parser = argparse.ArgumentParser(
             description='WinPCA v1.0',
             epilog='contact: lmb215@cam.ac.uk',
+            formatter_class=argparse.RawDescriptionHelpFormatter
         )
 
         # initiate subparsers
@@ -49,14 +48,15 @@ class CLI:
         '''
         # define arguments that are shared across all subparsers
         subparser.add_argument(
-            '-n', '--name', dest='prefix', required=True, metavar='\b',
-            help='Name of the run, i.e. prefix for all results generated in'
+            dest='prefix', metavar='<PREFIX>',
+            help='Prefix for this run, i.e. prefix for all results generated in'
             ' this WinPCA analysis.')
 
 
     def pca(self):
         '''
-        Windowed PCA on called genotypes (GT) with scikit-allel.
+        Windowed PCA using scikit-allel when working with callled genotypes(GT)'
+        ' and PCAngsd when working with genotype likelihoods (GL/PL).
         '''
 
         # add subparser
@@ -65,25 +65,21 @@ class CLI:
             ' accepts VCF or TSV as input.'
         )
 
-        # add shared arguments
-        self.shared_arguments(pca_parser)
-
-        # define subparser-specific arguments
-        variant_file = pca_parser.add_mutually_exclusive_group(required=True)
-        variant_file.add_argument(
-            '-v', '--vcf', dest='variant_file_path', metavar='\b', help='Path to'
-            ' (optionally gzipped) VCF file with GT field.')
-        variant_file.add_argument(
-            '-t', '--tsv', dest='variant_file_path', metavar='\b', help='Path to'
-            ' (optionally gzipped) TSV file with genotypes (see README for'
-            ' specifications).')
+        # positional arguments
         pca_parser.add_argument(
-            '-r', '--region', dest='region', required=True, metavar='\b',
-            help='Genomic region in format "chrom:start-end".')
+            dest='variant_file_path', metavar='<VARIANT_FILE>', help='Path to'
+            ' variant file (optionally gzipped VCF or TSV; see documentation'
+            ' for input file specifications).')
+        pca_parser.add_argument(
+            dest='region', metavar='<REGION>', help='Genomic region in format'
+            ' "chrom:start-end".')
+        self.shared_arguments(pca_parser)
+        
+        # optional arguments
         pca_parser.add_argument(
             '-s', '--samples', dest='samples', required=False, metavar='\b',
-            help='Comma-separated list of samples to include or file with one'
-            ' sample per line.')
+            help='''Comma-separated list of samples to include or file with one'
+            ' sample per line.''')
         pca_parser.add_argument(
             '-w', '--window_size', dest='w_size', required=False, type=int,
             default=config.W_SIZE, metavar='\b', help='Window size in base'
@@ -107,72 +103,77 @@ class CLI:
             metavar='\b', help='Applies only if "guide_samples" is selected for'
             ' -p/--polarize: One or more (-> comma-separated list) samples to'
             ' guide PC sign polarization.')
-
-    def pcangsd(self):
-        '''
-        Windowed PCA on genotype likelihoods (GL or PL) with scikit-allel.
-        '''
-
-        # add subparser
-        pcangsd_parser = self.subparsers.add_parser(
-            'pcangsd', help='Perform windowed PCA on genotype likelihoods (GL'
-            ' or PL), accepts VCF, BEAGLE or TSV as input.'
-        )
-
-        # add shared arguments
-        self.shared_arguments(pcangsd_parser)
-
-        # define subparser-specific arguments
-        variant_file = pcangsd_parser.add_mutually_exclusive_group(required=True)
-        variant_file.add_argument(
-            '-v', '--vcf', dest='variant_file_path', metavar='\b', help='Path'
-            ' to (optionally gzipped) VCF file with GL or PL field.')
-        variant_file.add_argument(
-            '-b', '--beagle', dest='variant_file_path', metavar='\b',
-            help='Path to (optionally gzipped) BEAGLE file with GL or PL'
-            ' values.')
-        variant_file.add_argument(
-            '-t', '--tsv', dest='variant_file_path', metavar='\b', help='Path'
-            ' to (optionally gzipped) TSV file with GL or PL values (see README'
-            ' for specifications).')
-        pcangsd_parser.add_argument(
-            '-f', '--format', dest='gl_format', required=True,
-            choices=['GL', 'PL'], metavar='\b', help='Genotype likelihood'
-            ' format ("GL" or "PL").')
-        pcangsd_parser.add_argument(
-            '-r', '--region', dest='region', required=True, metavar='\b',
-            help='Genomic region in format "chrom:start-end".')
-        pcangsd_parser.add_argument(
-            '-s', '--samples', dest='samples', required=False, metavar='\b',
-            help='Comma-separated list of samples to include or file with one'
-            ' sample per line.')
-        pcangsd_parser.add_argument(
-            '-w', '--window_size', dest='w_size', required=False, type=int,
-            default=config.W_SIZE, metavar='\b', help='Window size in base pairs'
-            f' (bp) [default: {config.W_SIZE}].')
-        pcangsd_parser.add_argument(
-            '-i', '--increment', dest='w_step', required=False, type=int,
-            default=config.W_STEP, metavar='\b', help='Step size in base pairs'
-            f' (bp). [default: {config.W_STEP}].')
-        pcangsd_parser.add_argument(
-            '-m', '--min_maf', dest='min_maf', required=False, type=float,
-            default=config.MIN_MAF, metavar='\b', help='Minor allele frequency'
-            f' threshold [default: {config.MIN_MAF}].')
-        pcangsd_parser.add_argument(
-            '-p', '--polarize', dest='polarize', required=False,
-            default=config.POL_MODE, choices=['auto', 'guide_samples', 'skip'],
-            metavar='\b', help='Sign polarization strategy'
-            ' ("auto"/"guide_samples" or "skip") [default:'
-            f' "{config.POL_MODE}"].')
-        pcangsd_parser.add_argument(
-            '-g', '--guide_samples', dest='guide_samples', required=False,
-            metavar='\b', help='Applies only if "guide_samples" is selected for'
-            ' -p/--polarize: One or more (-> comma-separated list) samples to'
-            ' guide PC sign polarization.')
-        pcangsd_parser.add_argument(
-            '-@', '--threads', dest='threads', required=False, type=int,
+        pca_parser.add_argument(
+            '-v', '--var_format', dest='var_fmt', required=False, 
+            default=config.VAR_FMT, choices=['GT', 'GL', 'PL'], metavar='\b', 
+            help='Variant format ("GT", "GL", "PL") [default:' 
+            f' {config.VAR_FMT}]. GL/PL invoke PCAngsd usage.')
+        pca_parser.add_argument(
+            '-t', '--threads', dest='threads', required=False, type=int,
             default=config.N_THREADS, metavar='\b', help='Number of threads'
-            f' [default: {config.N_THREADS}].')
+            f' [default: {config.N_THREADS}]. Multithreading is only used'
+            ' when invoking PCAngsd, i.e. when inputting GL/PL variants.')
+
+
+
+    # def pcangsd(self):                                                          # necessary to have separate parsers?
+    #     '''
+    #     Windowed PCA on genotype likelihoods (GL or PL) with scikit-allel.
+    #     '''
+
+    #     # add subparser
+    #     pcangsd_parser = self.subparsers.add_parser(
+    #         'pcangsd', help='Perform windowed PCA on genotype likelihoods (GL'
+    #         ' or PL), accepts VCF, BEAGLE or TSV as input.'
+    #     )
+
+    #     # positional arguments
+    #     pcangsd_parser.add_argument(
+    #         dest='variant_file_path', metavar='<VARIANT_FILE>', help='Path to'
+    #         ' variant file (optionally gzipped VCF, BEAGLE or TSV; see'
+    #         ' documentation for input file specifications).')
+    #     pcangsd_parser.add_argument(
+    #         dest='region', metavar='<REGION>', help='Genomic region in format'
+    #         ' "chrom:start-end".')
+    #     self.shared_arguments(pcangsd_parser)
+
+    #     # optional arguments
+    #     pcangsd_parser.add_argument(
+    #         '-f', '--format', dest='var_fmt', required=False, 
+    #         default=config.VAR_FMT, choices=['GL', 'PL'], metavar='\b', 
+    #         help='Genotype likelihood format ("GL" or "PL") [default:' 
+    #         f' {config.VAR_FMT}].')
+    #     pcangsd_parser.add_argument(
+    #         '-s', '--samples', dest='samples', required=False, metavar='\b',
+    #         help='Comma-separated list of samples to include or file with one'
+    #         ' sample per line.')
+    #     pcangsd_parser.add_argument(
+    #         '-w', '--window_size', dest='w_size', required=False, type=int,
+    #         default=config.W_SIZE, metavar='\b', help='Window size in base pairs'
+    #         f' (bp) [default: {config.W_SIZE}].')
+    #     pcangsd_parser.add_argument(
+    #         '-i', '--increment', dest='w_step', required=False, type=int,
+    #         default=config.W_STEP, metavar='\b', help='Step size in base pairs'
+    #         f' (bp). [default: {config.W_STEP}].')
+    #     pcangsd_parser.add_argument(
+    #         '-m', '--min_maf', dest='min_maf', required=False, type=float,
+    #         default=config.MIN_MAF, metavar='\b', help='Minor allele frequency'
+    #         f' threshold [default: {config.MIN_MAF}].')
+    #     pcangsd_parser.add_argument(
+    #         '-p', '--polarize', dest='polarize', required=False,
+    #         default=config.POL_MODE, choices=['auto', 'guide_samples', 'skip'],
+    #         metavar='\b', help='Sign polarization strategy'
+    #         ' ("auto"/"guide_samples" or "skip") [default:'
+    #         f' "{config.POL_MODE}"].')
+    #     pcangsd_parser.add_argument(
+    #         '-g', '--guide_samples', dest='guide_samples', required=False,
+    #         metavar='\b', help='Applies only if "guide_samples" is selected for'
+    #         ' -p/--polarize: One or more (-> comma-separated list) samples to'
+    #         ' guide PC sign polarization.')
+    #     pcangsd_parser.add_argument(
+    #         '-@', '--threads', dest='threads', required=False, type=int,
+    #         default=config.N_THREADS, metavar='\b', help='Number of threads'
+    #         f' [default: {config.N_THREADS}].')
 
 
     def polarize(self):
@@ -186,10 +187,10 @@ class CLI:
             ' run. Overwrites input data.'
         )
 
-        # add shared arguments
+        # positional arguments
         self.shared_arguments(polarize_parser)
 
-        # define subparser-specific arguments
+        # optional arguments
         polarize_parser.add_argument(
             '-c', '--principal_component', dest='pol_pc', required=False,
             choices=['1', '2', 'both'], default=1, metavar='\b', help='Specify'
@@ -218,10 +219,10 @@ class CLI:
             ' (multiply values by -1). Overwrites input data.'
         )
 
-        # add shared arguments
+        # positional arguments
         self.shared_arguments(flip_parser)
 
-        # define subparser-specific arguments
+        # optional arguments
         flip_parser.add_argument(
             '-w', '--windows', dest='flip_windows', required=False,
             metavar='\b', help='Comma-separated list of positions'
@@ -252,13 +253,13 @@ class CLI:
             ' stats for all input chromosomes.'
         )
 
-        # add shared arguments
+        # positional arguments
         self.shared_arguments(chromplot_parser)
-
-        # define subparser-specific arguments
         chromplot_parser.add_argument(
-            '-r', '--region', dest='region', required=True, metavar='\b',
-            help='Genomic region in format "chrom:start-end".')
+            dest='region', metavar='<REGION>', help='Genomic region in format'
+            ' "chrom:start-end".')
+        
+        # optional arguments
         chromplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', required=False,
             metavar='\b', help='Path to metadata TSV where first column are '
@@ -293,16 +294,16 @@ class CLI:
             ' stats for all input chromosomes.'
         )
 
-        # define subparser-specific arguments
+        # positional arguments
         genomeplot_parser.add_argument(
-            '-p', '--prefix', dest='run_prefix', required=True,
-            metavar='\b', help='Prefix shared by all chromosomes runs to'
-            ' include in genome-wide plot.')
+            dest='run_prefix', metavar='<RUN_PREFIX>', help='Prefix shared by all'
+            ' chromosomes runs to include in genome-wide plot.')
         genomeplot_parser.add_argument(
-            '-r', '--run_ids', dest='run_ids', required=True,
-            metavar='\b', help='Comma-separated list of run IDs to include,'
-            ' format: e.g. {prefix}.{run_id}.pc_1.tsv.gz. Also used to'
-            ' determine plotting order.')
+            dest='run_ids', metavar='<RUN_IDS>', help='Comma-separated list of'
+            ' run IDs to include, format: e.g. {prefix}.{run_id}.pc_1.tsv.gz.'
+            ' Also used to determine plotting order.')
+        
+        # positional arguments
         genomeplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', required=False,
             metavar='\b', help='Path to metadata TSV where first column are'
@@ -346,9 +347,10 @@ class CLI:
         if hasattr(args, 'hex_codes') and not hasattr(args, 'color_by'):
             self.parser.error(
                 '-g/--groups is required if -c/--colors is set.')
-        if not args.reflect and not hasattr(args, 'flip_windows'):
-            self.parser.error(
-                'One of --r/--reflect and -w,-windows must be set.')
+        if hasattr(args, 'flip_windows'):
+            if not args.reflect and args.flip_windows: 
+                self.parser.error(
+                    'One of --r/--reflect and -w,-windows must be set.')
 
         # check formatting
         if hasattr(args, 'variant_file_path'):
@@ -378,7 +380,7 @@ class CLI:
             chrom = args.region.split(':')[0]
             start = int(args.region.split(':')[1].split('-')[0])
             end = int(args.region.split(':')[1].split('-')[1])
-        if hasattr(args, 'samples'):
+        if hasattr(args, 'samples') and not args.samples is None:
             if ',' in args.samples:
                 sample_lst = args.samples.split(',')
             else:
@@ -454,7 +456,7 @@ class CLI:
             self.args_dct['chrom'] = chrom
             self.args_dct['start'] = start
             self.args_dct['end'] = end
-        if hasattr(args, 'samples'):
+        if hasattr(args, 'samples') and not args.samples is None:
             self.args_dct['sample_lst'] = sample_lst
         if hasattr(args, 'guide_samples'):
             self.args_dct['guide_sample_lst'] = guide_sample_lst
@@ -486,3 +488,6 @@ class CLI:
             self.args_dct['genomeplot_w'] = config.GENOMEPLOT_W
         if not 'genomeplot_h' in self.args_dct:
             self.args_dct['genomeplot_h'] = config.GENOMEPLOT_H
+        if not 'n_threads' in self.args_dct:                                    # WHY IS THIS NOT AUTOMATICALLY IN THE args_dct ?
+            self.args_dct['n_threads'] = config.GENOMEPLOT_H
+

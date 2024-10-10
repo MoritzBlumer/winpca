@@ -2,32 +2,42 @@
 Plot PC and associated data chromosome- and genome-wide.
 '''
 
-# IMPORT PACKAGES
+## IMPORT PACKAGES
 import sys
 import pandas as pd
 import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+from modules import config                                                      # DELETE
 
 
-# IMPORT MODULES
-from modules import config
+## CLASSES
 
 class Plot:
     '''
     Plot windowed PC and associated data.
     '''
 
-    def __init__(self, plot_var, stat_var=None,
-                 prefix=None, data=None, chrom=None, start=None, end=None,
-                 run_prefix=None,run_id_lst=None,
-                 metadata_path=None, color_by=None, hex_code_dct=None,
+    def __init__(self,
+                 plot_var,
+                 stat_var=None,
+                 prefix=None,
+                 data=None,
+                 chrom=None,
+                 start=None,
+                 end=None,
+                 run_prefix=None,
+                 run_id_lst=None,
+                 metadata_path=None,
+                 color_by=None,
+                 hex_code_dct=None,
                  interval=config.PLOT_INTERVAL,
                  chromplot_w=config.CHROMPLOT_W,
                  chromplot_h=config.CHROMPLOT_H,
                  genomeplot_w=config.GENOMEPLOT_W,
                  genomeplot_h=config.GENOMEPLOT_H,
-                 plot_fmt_lst=[config.PLOT_FMT]):
+                 plot_fmt_lst=[config.PLOT_FMT],
+                 ):
 
         # input variables
         self.prefix = prefix
@@ -97,7 +107,9 @@ class Plot:
                 sys.exit()
 
             # subset and reorder metadata_df to match data_df individuals
-            self.metadata_df = self.metadata_df.reindex(sample_lst).dropna()
+            self.metadata_df = self.metadata_df.loc[
+                self.metadata_df.index.intersection(sample_lst)
+            ].reindex(sample_lst)
 
             # if individuals are missing in the metadata print error message
             if len(self.metadata_df) != len(sample_lst):

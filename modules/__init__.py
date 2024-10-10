@@ -1,2 +1,6 @@
-# possibly use to import modules
-# from .cli import CLI
+"""
+WinPCA. A package for windowed PC analysis.
+"""
+
+## IMPORT PACKAGE-LEVEL MODULES
+from modules import config

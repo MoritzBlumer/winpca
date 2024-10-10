@@ -2,12 +2,12 @@
 Modifications of PC data.
 '''
 
-# IMPORT PACKAGES
+## IMPORT PACKAGES
 import sys
 import numpy as np
 
 
-# CLASSES
+## CLASSES
 
 class Polarize:
     '''
@@ -26,11 +26,9 @@ class Polarize:
         whether to flip the current window.
         '''
 
-        @staticmethod
         def is_positive(x):
             return 1 if x > 0 else 0
 
-        @staticmethod
         def invert(polarizer_arr):
             '''
             Evaluate an array with an arbitrary number of input windows (rows),
