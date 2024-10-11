@@ -5,7 +5,10 @@ Command line interface.
 ## IMPORT PACKAGES
 import os
 import argparse
-from modules import config                                                      ### DELETE
+
+## IMPORT CONFIG AND VERSION
+from . import config
+from . import __version__
 
 
 ## CLASSES
@@ -22,6 +25,13 @@ class CLI:
             description='WinPCA v1.0',
             epilog='contact: lmb215@cam.ac.uk',
             formatter_class=argparse.RawDescriptionHelpFormatter
+        )
+
+        # add -v/--version
+        self.parser.add_argument(
+            '-v', '--version',
+            action='version',
+            version=f'WinPCA {__version__}'
         )
 
         # initiate subparsers
@@ -113,67 +123,6 @@ class CLI:
             default=config.N_THREADS, metavar='\b', help='Number of threads'
             f' [default: {config.N_THREADS}]. Multithreading is only used'
             ' when invoking PCAngsd, i.e. when inputting GL/PL variants.')
-
-
-
-    # def pcangsd(self):                                                          # necessary to have separate parsers?
-    #     '''
-    #     Windowed PCA on genotype likelihoods (GL or PL) with scikit-allel.
-    #     '''
-
-    #     # add subparser
-    #     pcangsd_parser = self.subparsers.add_parser(
-    #         'pcangsd', help='Perform windowed PCA on genotype likelihoods (GL'
-    #         ' or PL), accepts VCF, BEAGLE or TSV as input.'
-    #     )
-
-    #     # positional arguments
-    #     pcangsd_parser.add_argument(
-    #         dest='variant_file_path', metavar='<VARIANT_FILE>', help='Path to'
-    #         ' variant file (optionally gzipped VCF, BEAGLE or TSV; see'
-    #         ' documentation for input file specifications).')
-    #     pcangsd_parser.add_argument(
-    #         dest='region', metavar='<REGION>', help='Genomic region in format'
-    #         ' "chrom:start-end".')
-    #     self.shared_arguments(pcangsd_parser)
-
-    #     # optional arguments
-    #     pcangsd_parser.add_argument(
-    #         '-f', '--format', dest='var_fmt', required=False, 
-    #         default=config.VAR_FMT, choices=['GL', 'PL'], metavar='\b', 
-    #         help='Genotype likelihood format ("GL" or "PL") [default:' 
-    #         f' {config.VAR_FMT}].')
-    #     pcangsd_parser.add_argument(
-    #         '-s', '--samples', dest='samples', required=False, metavar='\b',
-    #         help='Comma-separated list of samples to include or file with one'
-    #         ' sample per line.')
-    #     pcangsd_parser.add_argument(
-    #         '-w', '--window_size', dest='w_size', required=False, type=int,
-    #         default=config.W_SIZE, metavar='\b', help='Window size in base pairs'
-    #         f' (bp) [default: {config.W_SIZE}].')
-    #     pcangsd_parser.add_argument(
-    #         '-i', '--increment', dest='w_step', required=False, type=int,
-    #         default=config.W_STEP, metavar='\b', help='Step size in base pairs'
-    #         f' (bp). [default: {config.W_STEP}].')
-    #     pcangsd_parser.add_argument(
-    #         '-m', '--min_maf', dest='min_maf', required=False, type=float,
-    #         default=config.MIN_MAF, metavar='\b', help='Minor allele frequency'
-    #         f' threshold [default: {config.MIN_MAF}].')
-    #     pcangsd_parser.add_argument(
-    #         '-p', '--polarize', dest='polarize', required=False,
-    #         default=config.POL_MODE, choices=['auto', 'guide_samples', 'skip'],
-    #         metavar='\b', help='Sign polarization strategy'
-    #         ' ("auto"/"guide_samples" or "skip") [default:'
-    #         f' "{config.POL_MODE}"].')
-    #     pcangsd_parser.add_argument(
-    #         '-g', '--guide_samples', dest='guide_samples', required=False,
-    #         metavar='\b', help='Applies only if "guide_samples" is selected for'
-    #         ' -p/--polarize: One or more (-> comma-separated list) samples to'
-    #         ' guide PC sign polarization.')
-    #     pcangsd_parser.add_argument(
-    #         '-@', '--threads', dest='threads', required=False, type=int,
-    #         default=config.N_THREADS, metavar='\b', help='Number of threads'
-    #         f' [default: {config.N_THREADS}].')
 
 
     def polarize(self):
@@ -489,5 +438,5 @@ class CLI:
         if not 'genomeplot_h' in self.args_dct:
             self.args_dct['genomeplot_h'] = config.GENOMEPLOT_H
         if not 'n_threads' in self.args_dct:                                    # WHY IS THIS NOT AUTOMATICALLY IN THE args_dct ?
-            self.args_dct['n_threads'] = config.GENOMEPLOT_H
+            self.args_dct['n_threads'] = config.N_THREADS
 

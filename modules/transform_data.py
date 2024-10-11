@@ -3,8 +3,13 @@ Modifications of PC data.
 '''
 
 ## IMPORT PACKAGES
-import sys
 import numpy as np
+
+## MODULES
+from modules.log import Log
+
+## INSTANTIATE LOGGER
+log = Log()
 
 
 ## CLASSES
@@ -223,10 +228,8 @@ class Flip:
             if w not in pc_df.index:
                 missing_lst.append(w)
         if missing_lst != []:
-            print('\n[ERROR] The following windows are not represented in the'
-                  + f' supplied data: {",".join(missing_lst)}.',
-                file=sys.stderr)
-            sys.exit()
+            log.error('The following windows are not represented in the'
+                      f' supplied data: {",".join(missing_lst)}.')
 
         # flip windows
         pc_df.loc[w_flip_lst] *= -1

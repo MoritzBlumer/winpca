@@ -2,31 +2,30 @@
 Window parser and GT PCA functions.
 '''
 
-from modules import config                                                      # DELETE
 
-## SET NUMBER OF THREADS
+## IMPORT CONFIG
+from . import config                                                      # DELETE
 
-# load PCAngsd if working on GL/PL                                              # IMPROVE IMPORT SECTION
+## IMPORT PACKAGES & SET NUMBER OF THREADS FOR PCANGSD
 import os
-#if config.VAR_FMT == 'GT':
-import allel
-#else:
-os.environ["OMP_NUM_THREADS"] = str(config.N_THREADS)
-os.environ["OPENBLAS_NUM_THREADS"] = str(config.N_THREADS)
-os.environ["MKL_NUM_THREADS"] = str(config.N_THREADS)
-
-
-## IMPORT PACKAGES
-import sys, os
+if config.VAR_FMT == 'GT':
+    import allel
+else:
+    from pcangsd.shared import emMAF
+    from pcangsd.reader_cy import filterArrays
+    from pcangsd.covariance import emPCA
+    os.environ["OMP_NUM_THREADS"] = str(config.N_THREADS)
+    os.environ["OPENBLAS_NUM_THREADS"] = str(config.N_THREADS)
+    os.environ["MKL_NUM_THREADS"] = str(config.N_THREADS)
+import sys
 import gzip
 import numpy as np
-from numba import njit, prange, set_num_threads                                 # ???
 
+## MODULES
+from modules.log import Log
 
-## IMPORT MODULES
-from pcangsd.shared import emMAF
-from pcangsd.reader_cy import filterArrays
-from pcangsd.covariance import emPCA
+## INSTANTIATE LOGGER
+log = Log()
 
 
 ## CLASSES
@@ -66,6 +65,7 @@ class WPCA:
         self.skip_monomorphic = skip_monomorphic
         self.min_maf = min_maf
         self.n_threads = n_threads
+        #config.use_numba = True                                                   # MODIFY
 
         # transient variables
         self.n_windows = None
@@ -116,15 +116,10 @@ class WPCA:
         self.w_stop = self.w_start + self.w_size-1
         self.w_idx += 1
         self.win = [x for x in self.win if x[0] >= self.w_start]
-
-        print(
-            '[INFO] Processed ' + '' + str(self.w_idx) + ' of ' +
-            str(self.n_windows) + ' windows',
-                file=sys.stderr, flush=True,
-            )
+        
+        log.info(f'Processed {self.w_idx}/{self.n_windows} windows')
 
 
-#    @njit()                                                                    ### BRING BACK
     def gt_min_maf_filter(self):
         '''
         Drop SNPs with minor allele frequency below specified value.
@@ -212,7 +207,6 @@ class WPCA:
         sys.stdout = old_stdout
 
 
-    # @njit(parallel=True)                                                      # BRING BACK
     def pl_convert_to_gl(self):
         '''
         Convert a 2D array of phred scaled genotype likelihoods (PL) to
@@ -235,8 +229,8 @@ class WPCA:
         # for memory efficiency)
         self.w_gl_arr = np.zeros((n_rows, n_cols*2//3), dtype=np.float32)
 
-        # normalize all GLs partitioned by sample in parallel using numba prange
-        for idx in prange(0, w_pl_arr_3d.shape[0]):
+        # normalize all GLs partitioned by sample
+        for idx in range(0, w_pl_arr_3d.shape[0]):
             ind_arr = w_pl_arr_3d[idx]
             ind_arr = 1-(ind_arr / ind_arr.sum(axis=1).reshape(n_rows, 1))
             self.w_gl_arr[:,idx*2], self.w_gl_arr[:,idx*2+1] = \
@@ -315,13 +309,6 @@ class WPCA:
 
         # else create empty output & print info
         else:
-            print(
-                '[INFO] Skipped window ' + str(self.w_start) + '-'
-                + str(self.w_start + self.w_size-1) + ' with ' + str(n_var) +
-                ' variants (threshold is ' + str(self.min_var_per_w) +
-                ' variants per window)',
-                file=sys.stderr, flush=True,
-            )
             empty_lst = [None] * self.w_gt_arr.shape[1]
             out = {
                 'pos': pos,
@@ -333,6 +320,10 @@ class WPCA:
                 'n_miss': empty_lst,
                 'n_var': n_var
             }
+            log.info('Skipped window'
+                     f' {self.w_start}-{self.w_start + self.w_size-1} with'
+                     f' {n_var} variants (theshold: {self.min_var_per_w}'
+                      ' variants)')
 
         # append output
         self.out_dct[self.w_idx] = out
@@ -385,13 +376,6 @@ class WPCA:
 
         # else create empty output
         else:
-            print(
-                '[INFO] Skipped window ' + str(self.w_start) + '-' + str(self.w_start + self.w_size-1) + ' with ' +
-                str(n_var) + ' variants (threshold is ' + str(self.min_var_per_w) +
-                ' variants per window)',
-                file=sys.stderr, flush=True,
-            )
-
             empty_lst = [None] * (self.w_gl_arr.shape[1]//2)
             out = {
                 'pos': pos,
@@ -403,6 +387,10 @@ class WPCA:
                 'n_miss': empty_lst,
                 'n_var': n_var,
             }
+            log.info('Skipped window'
+                     f' {self.w_start}-{self.w_start + self.w_size-1} with'
+                     f' {n_var} variants (theshold: {self.min_var_per_w}'
+                      ' variants)')
 
         # append output
         self.out_dct[self.w_idx] = out
@@ -437,13 +425,11 @@ class WPCA:
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
                 
-            #print(f'sample_lst: {self.sample_lst}', flush=True)                # DELETE
-            #print(f'var_file_sample_lst: {var_file_sample_lst}', flush=True)   # DELETE
             # obtain index positions
             sample_idx_lst = [
                 var_file_sample_lst.index(x) for x in self.sample_lst
             ]
-            #print(f'sample_idx_lst: {sample_idx_lst}', flush=True)             # DELETE
+
             # for PL: modify to account for 3 columns per sample
             if self.var_fmt in ['GL', 'PL'] and \
                 self.file_fmt in ['TSV', 'BEAGLE']:
@@ -454,11 +440,9 @@ class WPCA:
                 if self.var_fmt == 'PL':
                     sample_idx_lst = [[i, i+1, i+2] for i in sample_idx_lst]
                 sample_idx_lst = [x for i in sample_idx_lst for x in i]
-                #print(f'sample_idx_lst: {sample_idx_lst}', flush=True)         # DELETE
 
                 # remove duplicates from var_file_sample_lst (preserve order)
                 var_file_sample_lst = list(dict.fromkeys(var_file_sample_lst))
-                #print(f'var_file_sample_lst: {var_file_sample_lst}', flush=True)# DELETE
 
         # initiate first window
         self.w_start = self.start
@@ -640,89 +624,8 @@ class WPCA:
                             self.init_win()
 
         # print exit message
-        print(
-            '\n[INFO] Processed all windows',
-            file=sys.stderr, flush=True,
-        )
+        log.newline()
+        log.info('Processed all windows')
 
-#            # traverse input file
-#            for line in variant_file:                                           # ALL
-#
-#                # skip header
-#                if line.startswith('#'): continue                               # DELETE             (only applies to VCF-GT, VCF-PL) ### ACTUALLY DELETE, SINCE POINTER ISN'T RESET AFTER PARSING THE HEADER
-#
-#
-#                # FETCH LINE
-#                line = line.strip().split('\t')                                 # ALL
-#
-#
-#                # PROCESS LINE
-#
-#                q_chrom = line[0]                                               # ALL_BUT_BEAGLE
-#                # q_chrom = line[0].rsplit('_', 1)[0]                           #     BEAGLE
-#
-#                # skip other than the specified chromosome
-#                if q_chrom != self.chrom: continue                              # ALL (VCF-PL has this after q_chrom = line[0] to enhance performance --> makes sense for all)       
-#
-#                # keep only PASS sites
-#                filter_field = line[6]                                          # VCF-GT
-#                if filter_field != 'PASS': continue                             # VCF-GT
-#
-#                pos = int(line[1])                                              # ALL_BUT_BEAGLE
-#                # pos = int(line[0].rsplit('_', 1)[1])                          #     BEAGLE
-#
-#                # format = line[8].split(':')                                   # VCF-PL (makes sense for VCF-GL as well)
-#                # if not 'PL' in format: continue                               # VCF-PL (makes sense for VCF-GL as well)
-#
-#
-#                # FETCH VARIANTS
-#                gts = [line[9:][idx].split(':')[0] for idx in sample_idx_lst]   # VCF-GT
-#                gts = [self.gt_code_dct[x] for x in gts]                        # VCF-GT
-#                # gts = [line[2:][idx] for idx in sample_idx_lst]               # TSV-GT
-#                # pls = [line[2:][idx] for idx in sample_idx_lst]               # TSV-PL
-#                # pls = pl_fetch_target_pls(                                    # VCF-PL
-#                #       line[9:], format.index('PL'), sample_idx_lst)           # VCF-PL
-#                # gls = [line[2:][idx] for idx in sample_idx_lst]               # TSV-GL
-#                # gls = [line[3:][idx] for idx in sample_idx_lst]               # BEAGLE
-#
-#
-#
-#                # PROCESS VARIANTS
-#
-#                # skip monomorphic sites if specified                           
-#                if self.skip_monomorphic and len(set(gts)) == 1: continue       # VCF-GT TSV-GT                                                   ### MODIFY (?)
-#
-#                # # skip non-biallellic sites                                   # VCF-PL
-#                # if pls == []: continue                                        # VCF-PL 
-#
-#
-#                # PROCESS WINDOWS
-#
-#
-#
-#                # case: pos exceeds current window
-#                while self.w_stop < pos:                                        # ALL
-#
-#                    # apply min_maf filter if specified and if window contains
-#                    # variants: apply function
-#                    if self.win: self.gt_process_win()                          # VCF-GT TSV-GT
-#                  # if win: pl_process_win(win, w_start, w_size, min_maf, func) #               VCF-PL TSV-PL
-#                  # if win: gl_process_win(win, w_start, w_size, min_maf, func) #                             TSV-GL BEAGLE    
-#                    if self.stop < self.w_stop: break                           # ALL
-#                    self.init_win()                                             # ALL
-#
-#                # append pos (and genotypes) to current window
-#                if pos > self.w_start: self.win.append([pos] + gts)             # VCF-GT TSV-GT              
-#                # if pos > w_start: win.append([pos] + pls)                     #               VCF-PL TSV-PL
-#                # if pos > w_start: win.append([pos] + gls)                     #                             TSV-GL BEAGLE
-#
-#                # if end of window is reached: apply min_maf filter, function \
-#                # & initialize
-#                if self.w_stop <= pos:                                          # ALL
-#                    self.gt_process_win()                                       # VCF-GT TSV-GT 
-#                    # pl_process_win(win, w_start, w_size, min_maf, func)                       VCF-PL TSV-PL
-#                    # gl_process_win(win, w_start, w_size, min_maf, func)       #                             TSV-GL BEAGLE
-#                    if self.stop < self.w_stop: break                           # ALL
-#                    self.init_win()                                             # ALL
 
 

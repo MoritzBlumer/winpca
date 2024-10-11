@@ -3,9 +3,14 @@ Central class to store, read, write and modify PCA and associated data.
 '''
 
 ## IMPORT PACKAGES
-import sys
 import os
 import pandas as pd
+
+## MODULES
+from modules.log import Log
+
+## INSTANTIATE LOGGER
+log = Log()
 
 
 ## CLASSES
@@ -97,10 +102,8 @@ class WPCA_Data:
         '''
 
         # print info
-        print(
-            f'\n[INFO] Reading data from prefix "{self.prefix}*".',
-            file=sys.stderr, flush=True,
-        )
+        log.newline()
+        log.info(f'Reading data from prefix "{self.prefix}*"')
 
         # flush existing instance variables
         self.pc_1, self.pc_2, self.hetp, self.miss, self.stat = \
@@ -127,13 +130,13 @@ class WPCA_Data:
             index_col='pos',
         )
 
-        # miss
-        self.miss = pd.read_csv(
-            f'{self.prefix}.{self.suffix_dct["miss"]}',
-            sep='\t',
-            index_col='pos',
-            dtype='Int64'
-        )
+        # # miss
+        # self.miss = pd.read_csv(
+        #     f'{self.prefix}.{self.suffix_dct["miss"]}',
+        #     sep='\t',
+        #     index_col='pos',
+        #     dtype='Int64'
+        # )
 
         # stat
         self.stat = pd.read_csv(
@@ -168,10 +171,10 @@ class WPCA_Data:
             f'{self.prefix}.{self.suffix_dct["hetp"]}',
             sep='\t', index_label='pos', na_rep='NA')
 
-        # miss
-        self.miss.to_csv(
-            f'{self.prefix}.{self.suffix_dct["miss"]}',
-            sep='\t', index_label='pos', na_rep='NA')
+        # # miss
+        # self.miss.to_csv(
+        #     f'{self.prefix}.{self.suffix_dct["miss"]}',
+        #     sep='\t', index_label='pos', na_rep='NA')
 
         # stat
         self.stat.to_csv(

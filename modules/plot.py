@@ -8,7 +8,15 @@ import pandas as pd
 import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-from modules import config                                                      # DELETE
+
+## IMPORT CONFIG
+from . import config
+
+# MODULES
+from modules.log import Log
+
+## INSTANTIATE LOGGER
+log = Log()
 
 
 ## CLASSES
@@ -101,10 +109,9 @@ class Plot:
                 self.metadata_path, sep='\t', index_col=0, dtype=str
             )
             if len(self.metadata_df.index) != len(set(self.metadata_df.index)):
-                print('\n[ERROR] The provided metadata file contains non-unique'
-                    ' sample IDs.',
-                    file=sys.stderr)
-                sys.exit()
+                log.error('The provided metadata file contains non-unique'
+                          ' sample IDs')
+
 
             # subset and reorder metadata_df to match data_df individuals
             self.metadata_df = self.metadata_df.loc[
@@ -113,10 +120,9 @@ class Plot:
 
             # if individuals are missing in the metadata print error message
             if len(self.metadata_df) != len(sample_lst):
-                print('\n[ERROR] One or more sample IDs are missing in the'
-                      ' provided metadata file.',
-                    file=sys.stderr)
-                sys.exit()
+                log.error('One or more sample IDs are missing in the'
+                          ' provided metadata file')
+
 
             # add metadata columns to data_df
             for column_name in self.metadata_df.columns:
@@ -157,9 +163,8 @@ class Plot:
         if self.hex_code_dct:
             self.color_dct = self.hex_code_dct
             if not all(x in self.color_dct.keys() for x in self.group_lst):
-                print('\n[ERROR] HEX codes missing for one or more groups.',
-                        file=sys.stderr)
-                sys.exit()
+                log.error('HEX codes missing for one or more groups')
+
         else:
             import plotly.colors as pc
             def_col_lst = pc.DEFAULT_PLOTLY_COLORS
@@ -218,29 +223,49 @@ class Plot:
             '% heterozygous sites' if self.stat_var == 'hetp' else \
             '% variance explained'
 
-        # compile per-window hover data strings
-        hover_data = [
-            ''.join(
-                [f'<b>pos</b>: {str(idx)}<br><b>{display_name}</b>: \
-                <b>{row[self.stat_var]}%<br>' ]
-            ) for idx, row in self.stat_df.iterrows()
-        ]
+        # create mask of 
+        split_mask = self.stat_df[[self.stat_var]].notna().all(axis=1)
+    
+        # series defining groups
+        group_srs = (split_mask != split_mask.shift()).cumsum()
+        
+        # derive sub_dfs that contain no NaN stretches
+        stat_sub_dfs = [
+            sub_df for _, sub_df in self.stat_df[split_mask].groupby(group_srs)]
 
-        # plot
-        self.fig.add_trace(
-            go.Scatter(
-                x=self.stat_df.index,
-                y=self.stat_df[self.stat_var],
-                name=display_name,
-                legendgroup=display_name,
-                mode='lines',
-                text=hover_data,
-                hoverinfo='text',
-                line=dict(color='#4d61b0', width=1),
-                fill='tozeroy',
-                connectgaps=True,
-            ),
-        row=1, col=1)
+        # only show first trace as legend item
+        add_legend_item = True
+
+        # plot each sub_df
+        for sub_df in stat_sub_dfs:
+
+            # compile per-window hover data strings
+            hover_data = [
+                ''.join(
+                    [f'<b>pos</b>: {str(idx)}<br><b>{display_name}</b>: \
+                    <b>{row[self.stat_var]}%<br>' ]
+                ) for idx, row in sub_df.iterrows()
+            ]
+
+            # plot
+            self.fig.add_trace(
+                go.Scatter(
+                    x=sub_df.index,
+                    y=sub_df[self.stat_var],
+                    name=display_name,
+                    legendgroup=display_name,
+                    showlegend=add_legend_item,
+                    mode='lines',
+                    text=hover_data,
+                    hoverinfo='text',
+                    line=dict(color='#4d61b0', width=1),
+                    fill='tozeroy',
+                    connectgaps=False,  # Disable connecting gaps
+                ),
+            row=1, col=1)
+
+            # set to False to stop adding additional legend items after first
+            add_legend_item = False
 
 
         # BOTTOM PANEL
@@ -287,6 +312,7 @@ class Plot:
                     legendgroup=list(sample_df[self.group_id])[0],
                     mode='lines',
                     line=dict(color=self.color_dct[group]),
+                    connectgaps=False,
                 ),
                 row=2, col=1
             )
@@ -451,6 +477,7 @@ class Plot:
                     legendgroup=list(sample_df[self.group_id])[0],
                     mode='lines',
                     line=dict(color=self.color_dct[group]),
+                    connectgaps=False,
                 ),
             )
 
