@@ -11,7 +11,6 @@ import sys
 class Log():
 
     def __init__(self):
-
         pass
 
     def newline(self):
@@ -23,7 +22,7 @@ class Log():
               file=sys.stderr,
               flush=True,
               )
-        
+
 
     def info(self, message):
         '''
@@ -46,5 +45,3 @@ class Log():
               flush=True,
               )
         sys.exit(1)
-
-

@@ -2,13 +2,13 @@
 Command line interface.
 '''
 
-## IMPORT PACKAGES
-import os
-import argparse
-
 ## IMPORT CONFIG AND VERSION
 from . import config
 from . import __version__
+
+## IMPORT PACKAGES
+import os
+import argparse
 
 
 ## CLASSES
@@ -210,6 +210,11 @@ class CLI:
         
         # optional arguments
         chromplot_parser.add_argument(
+            '-p', '--plot_variable', dest='plot_var', required=False,
+            choices=['PC1', 'PC2', 'het'], default=config.PLOT_VAR,
+            metavar='\b', help='Specify what to plot ("PC1", "PC2" or "HET")'
+            f' [default: {config.PLOT_VAR}].')
+        chromplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', required=False,
             metavar='\b', help='Path to metadata TSV where first column are '
             ' sample names. Other columns will be used to annotate data in HTML'
@@ -253,6 +258,11 @@ class CLI:
             ' Also used to determine plotting order.')
         
         # positional arguments
+        genomeplot_parser.add_argument(
+            '-p', '--plot_variable', dest='plot_var', required=False,
+            choices=['PC1', 'PC2', 'het'], default=config.PLOT_VAR,
+            metavar='\b', help='Specify what to plot ("PC1", "PC2" or "HET")'
+            f' [default: {config.PLOT_VAR}].')
         genomeplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', required=False,
             metavar='\b', help='Path to metadata TSV where first column are'
@@ -357,6 +367,10 @@ class CLI:
                 guide_sample_lst = args.guide_samples.split(',')
             else:
                 guide_sample_lst = None
+        if hasattr(args, 'plot_var'):
+            if args.plot_var == 'PC1': args.plot_var = 'pc_1'
+            if args.plot_var == 'PC2': args.plot_var = 'pc_2'
+            if args.plot_var == 'het': args.plot_var = 'hetp'
         if hasattr(args, 'hex_codes'):
             if args.hex_codes:
                 hex_code_dct = {}

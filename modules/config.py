@@ -5,9 +5,9 @@ Default settings.
 # pca + pcangsd
 VAR_FMT = 'GT'
 SKIP_MONOMORPHIC=False
-MIN_VAR_PER_W = 75                                                              # have separate defaults for PCA/PCANGSD? And they should be relative to window size
+MIN_VAR_PER_W = 25
 MIN_MAF = 0.01
-W_SIZE = 100000
+W_SIZE = 1000000
 W_STEP = 10000
 
 # pcangsd
@@ -21,7 +21,8 @@ POL_PC = 'both'
 # flip
 FLIP_PC = '1'
 
-# chromplot
+# chromplot + genomeplot
+PLOT_VAR = 'PC1'
 PLOT_FMT = 'html'
 PLOT_INTERVAL = None
 

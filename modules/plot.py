@@ -2,15 +2,14 @@
 Plot PC and associated data chromosome- and genome-wide.
 '''
 
+## IMPORT CONFIG
+from . import config
+
 ## IMPORT PACKAGES
-import sys
 import pandas as pd
 import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-
-## IMPORT CONFIG
-from . import config
 
 # MODULES
 from modules.log import Log
@@ -48,6 +47,8 @@ class Plot:
                  ):
 
         # input variables
+        self.plot_var = plot_var
+        self.stat_var = stat_var
         self.prefix = prefix
         self.data = data
         self.chrom = chrom
@@ -55,8 +56,6 @@ class Plot:
         self.end = end
         self.run_prefix = run_prefix
         self.run_id_lst = run_id_lst
-        self.plot_var = plot_var
-        self.stat_var = stat_var
         self.metadata_path = metadata_path
         self.color_by = color_by
         self.hex_code_dct = hex_code_dct
@@ -76,6 +75,13 @@ class Plot:
         self.color_dct = None
         self.fig = None
 
+        # set plot_var display name
+        if   self.plot_var == 'pc_1':
+            self.plot_var_disp = 'PC 1'
+        elif self.plot_var == 'pc_2':
+            self.plot_var_disp = 'PC 2'
+        elif self.plot_var == 'hetp':
+            self.plot_var_disp = 'SNP Heterozygosity'
 
     @staticmethod
     def subset(df, interval):
@@ -223,12 +229,12 @@ class Plot:
             '% heterozygous sites' if self.stat_var == 'hetp' else \
             '% variance explained'
 
-        # create mask of 
+        # create mask of stretches of None
         split_mask = self.stat_df[[self.stat_var]].notna().all(axis=1)
-    
+
         # series defining groups
         group_srs = (split_mask != split_mask.shift()).cumsum()
-        
+
         # derive sub_dfs that contain no NaN stretches
         stat_sub_dfs = [
             sub_df for _, sub_df in self.stat_df[split_mask].groupby(group_srs)]
@@ -369,7 +375,7 @@ class Plot:
             side='left', mirror=True,
             ticks='outside', tickfont=dict(size=10),
             title_font=dict(size=12),
-            title=dict(text=f'<b>{self.plot_var.replace("_"," ")}', standoff=0),
+            title=dict(text=self.plot_var_disp, standoff=0),
         )
 
         # save image
@@ -517,7 +523,7 @@ class Plot:
             side='left', mirror=True,
             ticks='outside', tickfont=dict(size=10),
             title_font=dict(size=12),
-            title=dict(text='<b>PC 1', standoff=0),
+            title=dict(text=self.plot_var_disp, standoff=0),
         )
 
         # add vertical lines to separate chromosomes

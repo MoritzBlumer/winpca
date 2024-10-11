@@ -4,7 +4,7 @@ Window parser and GT PCA functions.
 
 
 ## IMPORT CONFIG
-from . import config                                                      # DELETE
+from . import config
 
 ## IMPORT PACKAGES & SET NUMBER OF THREADS FOR PCANGSD
 import os
@@ -12,7 +12,7 @@ if config.VAR_FMT == 'GT':
     import allel
 else:
     from pcangsd.shared import emMAF
-    from pcangsd.reader_cy import filterArrays
+    from pcangsd.reader_cy import filterArrays                                  # pylint: disable=E0611
     from pcangsd.covariance import emPCA
     os.environ["OMP_NUM_THREADS"] = str(config.N_THREADS)
     os.environ["OPENBLAS_NUM_THREADS"] = str(config.N_THREADS)
@@ -36,13 +36,13 @@ class WPCA:
     Parse hard-called genotypes (GT) from VCF or TSV and apply a function.
     '''
 
-    def __init__(self, 
-                 variant_file_path, 
+    def __init__(self,
+                 variant_file_path,
                  file_fmt,
                  var_fmt,
                  sample_lst,
                  chrom, start, stop,
-                 w_size, w_step, 
+                 w_size, w_step,
                  min_var_per_w,
                  skip_monomorphic,
                  min_maf,
@@ -65,7 +65,6 @@ class WPCA:
         self.skip_monomorphic = skip_monomorphic
         self.min_maf = min_maf
         self.n_threads = n_threads
-        #config.use_numba = True                                                   # MODIFY
 
         # transient variables
         self.n_windows = None
@@ -116,7 +115,7 @@ class WPCA:
         self.w_stop = self.w_start + self.w_size-1
         self.w_idx += 1
         self.win = [x for x in self.win if x[0] >= self.w_start]
-        
+
         log.info(f'Processed {self.w_idx}/{self.n_windows} windows')
 
 
@@ -139,7 +138,7 @@ class WPCA:
 
     def gt_process_win(self):
         '''
-        Remove POS info, convert to numpy array, apply min_maf filter, call 
+        Remove POS info, convert to numpy array, apply min_maf filter, call
         target function or return empty array if there are no variants.
         '''
 
@@ -187,7 +186,7 @@ class WPCA:
 
         # mute STDOUT by redirecting STDOUT tp /dev/null
         old_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w') 
+        sys.stdout = open(os.devnull, 'w')
 
         # non-empty: trim off pos info, convert to numpy arr, apply min_maf
         # filter, convert PL to GL
@@ -199,10 +198,10 @@ class WPCA:
         # empty: convert to empty numpy arr & apply target function
         else:
             self.w_gl_arr = np.empty((0,0))
-        
+
         # call target function
         self.pcangsd()
-        
+
         # restore sys.stdout
         sys.stdout = old_stdout
 
@@ -213,14 +212,14 @@ class WPCA:
         normalized genotype likelihoods (GL) and return a 2D array, omitting
         the third GL, which is the expected input for PCAngsd.
         '''
-        
+
         # fetch dimensions
         n_rows, n_cols = self.w_pl_arr.shape
 
-        # reshape pl_arr to have separation by sample as first dimension 
+        # reshape pl_arr to have separation by sample as first dimension
         # (to vectorize normalization) --> pl_arr_3d dimensions: (samples,'
         # variants, 3 pl_values)
-        w_pl_arr_3d = self.w_pl_arr.reshape(n_rows, -1, 3).transpose(1, 0, 2)
+        w_pl_arr_3d = self.w_pl_arr.reshape(n_rows, -1, 3).transpose(1, 0, 2)   # pylint: disable=E1121
 
         # unphred
         w_pl_arr_3d = np.power(10, -w_pl_arr_3d/10)
@@ -245,7 +244,7 @@ class WPCA:
 
         # mute STDOUT by redirecting STDOUT tp /dev/null
         old_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w') 
+        sys.stdout = open(os.devnull, 'w')
 
         # non-empty: trim off pos info, convert to numpy arr, apply min_maf
         # filter, convert PL to GL
@@ -257,15 +256,15 @@ class WPCA:
         # empty: convert to empty numpy arr & apply target function
         else:
             self.w_gl_arr = np.empty((0,0))
-        
+
         # call target function
         self.pcangsd()
-        
+
         # restore sys.stdout
         sys.stdout = old_stdout
 
 
-    def pca(self):                                                              # incorporate skip_monomorphic here?
+    def pca(self):                                                              # skip_mono.. here?
         '''
         Conduct PCA, but if (n_var < min_var_per_w) generate empty/dummy
         output instead.
@@ -282,7 +281,6 @@ class WPCA:
 
         # if # variants passes specified threshold
         if n_var >= self.min_var_per_w:
-
             # pca
             pca = allel.pca(
                 self.w_gt_arr,
@@ -341,13 +339,13 @@ class WPCA:
         # count variants
         n_var = self.w_gl_arr.shape[0]
 
-        # if # variants passes specified threshold  
+        # if # variants passes specified threshold
         if n_var >= self.min_var_per_w:
 
             # compute covariance matrix with PCAngsd
             cov_arr, _, _, _, _ = emPCA(
                 self.w_gl_arr,
-                self.gl_min_maf_arr, 
+                self.gl_min_maf_arr,
                 0, 100, 1e-5,
                 self.n_threads
             )
@@ -424,7 +422,7 @@ class WPCA:
             if self.file_fmt == 'BEAGLE':
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
-                
+
             # obtain index positions
             sample_idx_lst = [
                 var_file_sample_lst.index(x) for x in self.sample_lst
@@ -452,7 +450,7 @@ class WPCA:
 
         # iterrate over windows
         with read_func(self.variant_file_path, 'rt') as variant_file:
-            
+
             # GT
             if self.var_fmt == 'GT':
 
@@ -473,7 +471,7 @@ class WPCA:
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + gts)
                         if self.w_stop <= pos:
-                            self.gt_process_win() 
+                            self.gt_process_win()
                             if self.stop < self.w_stop: break
                             self.init_win()
 
@@ -491,28 +489,26 @@ class WPCA:
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + gts)
                         if self.w_stop <= pos:
-                            self.gt_process_win() 
+                            self.gt_process_win()
                             if self.stop < self.w_stop: break
                             self.init_win()
 
             # GL
-            if self.var_fmt == 'GL':                                            ### ADD
-                if self.file_fmt == 'VCF':
-                    pass
+            if self.var_fmt == 'GL':
 
                 if self.file_fmt == 'VCF':
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
                         if q_chrom != self.chrom: continue
-                        format = line[8].split(':') 
-                        if not self.var_fmt in format: continue 
+                        format_field = line[8].split(':')
+                        if not self.var_fmt in format_field: continue
                         pos = int(line[1])
                         gt_fields = line[9:]
-                        # get each sample's GL field as a list #### REFINE for 2 cols
+                        # get each sample's GL field as a list
                         gls = [
                             gt_fields[idx].split(':')[
-                                format.index(self.var_fmt)
+                                format_field.index(self.var_fmt)
                             ].split(',') \
                                 for idx in sample_idx_lst
                         ]
@@ -521,17 +517,16 @@ class WPCA:
                         # delete 3rd field for each GL (expected by PCAngsd)
                         gls = np.delete(gls, np.s_[2::3], axis=1)
                         # GATK encodes missing data as '.' --> drop lines
-                        # where length of PLs != 3* n_samples
-                        gls = [] if (len(gls)) != len(sample_idx_lst)*3 else gls            
-                        if pls == []: continue
-
-                        while self.w_stop < pos: 
+                        # where length of GLs != 3* n_samples
+                        gls = [] if (len(gls)) != len(sample_idx_lst)*3 else gls
+                        if gls == []: continue
+                        while self.w_stop < pos:
                             if self.win: self.pl_process_win()
                             if self.stop < self.w_stop: break
-                            self.init_win() 
-                        if pos > self.w_start: self.win.append([pos] + pls) 
+                            self.init_win()
+                        if pos > self.w_start: self.win.append([pos] + gls)
                         if self.w_stop <= pos:
-                            self.pl_process_win() 
+                            self.pl_process_win()
                             if self.stop < self.w_stop: break
                             self.init_win()
 
@@ -544,11 +539,11 @@ class WPCA:
                         gls = [line[2:][idx] for idx in sample_idx_lst]
                         while self.w_stop < pos:
                             if self.win: self.gl_process_win()
-                            if self.stop < self.w_stop: break 
+                            if self.stop < self.w_stop: break
                             self.init_win()
-                        if pos > self.w_start: self.win.append([pos] + gls) 
-                        if self.w_stop <= pos: 
-                            self.gl_process_win() 
+                        if pos > self.w_start: self.win.append([pos] + gls)
+                        if self.w_stop <= pos:
+                            self.gl_process_win()
                             if self.stop < self.w_stop: break
 
                 if self.file_fmt == 'BEAGLE':
@@ -560,11 +555,11 @@ class WPCA:
                         gls = [line[2:][idx] for idx in sample_idx_lst]
                         while self.w_stop < pos:
                             if self.win: self.gl_process_win()
-                            if self.stop < self.w_stop: break 
+                            if self.stop < self.w_stop: break
                             self.init_win()
-                        if pos > self.w_start: self.win.append([pos] + gls) 
-                        if self.w_stop <= pos: 
-                            self.gl_process_win() 
+                        if pos > self.w_start: self.win.append([pos] + gls)
+                        if self.w_stop <= pos:
+                            self.gl_process_win()
                             if self.stop < self.w_stop: break
 
             # PL
@@ -575,14 +570,14 @@ class WPCA:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
                         if q_chrom != self.chrom: continue
-                        format = line[8].split(':') 
-                        if not self.var_fmt in format: continue 
+                        format_field = line[8].split(':')
+                        if not self.var_fmt in format_field: continue
                         pos = int(line[1])
                         gt_fields = line[9:]
                         # get each sample's PL field as a list
                         pls = [
                             gt_fields[idx].split(':')[
-                                format.index(self.var_fmt)
+                                format_field.index(self.var_fmt)
                             ].split(',') \
                                 for idx in sample_idx_lst
                         ]
@@ -590,15 +585,15 @@ class WPCA:
                         pls = [x for pl in pls if len(pl) == 3 for x in pl]
                         # GATK encodes missing PL data as '.' --> drop lines
                         # where length of PLs != 3* n_samples
-                        pls = [] if (len(pls)) != len(sample_idx_lst)*3 else pls               
+                        pls = [] if (len(pls)) != len(sample_idx_lst)*3 else pls
                         if pls == []: continue
-                        while self.w_stop < pos: 
+                        while self.w_stop < pos:
                             if self.win: self.pl_process_win()
                             if self.stop < self.w_stop: break
-                            self.init_win() 
-                        if pos > self.w_start: self.win.append([pos] + pls) 
+                            self.init_win()
+                        if pos > self.w_start: self.win.append([pos] + pls)
                         if self.w_stop <= pos:
-                            self.pl_process_win() 
+                            self.pl_process_win()
                             if self.stop < self.w_stop: break
                             self.init_win()
 
@@ -611,21 +606,18 @@ class WPCA:
                         pls = [line[2:][idx] for idx in sample_idx_lst]
                         # GATK encodes missing PL data as '.' --> drop lines
                         # where length of PLs != 3* n_samples
-                        pls = [] if (len(pls)) != len(sample_idx_lst) else pls  
+                        pls = [] if (len(pls)) != len(sample_idx_lst) else pls
                         if pls == []: continue
-                        while self.w_stop < pos: 
+                        while self.w_stop < pos:
                             if self.win: self.pl_process_win()
                             if self.stop < self.w_stop: break
-                            self.init_win() 
-                        if pos > self.w_start: self.win.append([pos] + pls) 
+                            self.init_win()
+                        if pos > self.w_start: self.win.append([pos] + pls)
                         if self.w_stop <= pos:
-                            self.pl_process_win() 
+                            self.pl_process_win()
                             if self.stop < self.w_stop: break
                             self.init_win()
 
         # print exit message
         log.newline()
         log.info('Processed all windows')
-
-
-

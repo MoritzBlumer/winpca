@@ -1,8 +1,253 @@
 #!/usr/bin/env python3
-#
-# Moritz Blumer, 2024
 
 """
-WinPCA. A package for windowed PCA analysis.
+WinPCA. A package for windowed PC analysis.
 """
 
+## IMPORT CONFIG
+from modules import config
+
+## IMPORT MODULES
+from modules.cli import CLI
+from modules.data import WPCA_Data
+from modules.log import Log
+
+## INSTANTIATE LOGGER
+log = Log()
+
+
+
+## MAIN
+
+def main():
+    '''
+    Execute WinPCA.
+    '''
+
+    ## PARSE COMMAND LINE ARGUMENTS
+
+    # instantiate, call subparsers & parse
+    cli = CLI()
+    cli.pca()
+    cli.polarize()
+    cli.flip()
+    cli.chromplot()
+    cli.genomeplot()
+    cli.parse_args()
+    args_dct = cli.args_dct
+
+    # set mode
+    mode = args_dct['winpca']
+
+
+    ## MODE: WINDOWED PCA
+
+    if mode == 'pca':
+
+        # print info
+        log.newline()
+        log.info('Performing windowed PCA')
+        log.newline()
+
+        # determine file format
+        if args_dct['variant_file_path'].endswith('.gz'):
+            file_fmt = args_dct['variant_file_path'].split('.')[-2].upper()
+        else:
+            file_fmt = args_dct['variant_file_path'].split('.')[-1].upper()
+
+        # update n_threads/var_fmt in CONFIG
+        config.N_THREADS = args_dct['n_threads']
+        config.VAR_FMT = args_dct['var_fmt']
+
+        # load module & instantiate
+        from modules.windowed_pca import WPCA
+        wpca = WPCA(
+            variant_file_path = args_dct['variant_file_path'],
+            file_fmt=file_fmt,
+            var_fmt=args_dct['var_fmt'],
+            sample_lst=args_dct['sample_lst'],
+            chrom=args_dct['chrom'],
+            start=args_dct['start'],
+            stop=args_dct['end'],
+            w_size=args_dct['w_size'],
+            w_step=args_dct['w_step'],
+            min_var_per_w=args_dct['min_var_per_w'],
+            skip_monomorphic=args_dct['skip_monomorphic'],
+            min_maf=args_dct['min_maf'],
+            n_threads=args_dct['n_threads'],
+            )
+
+        # run, parse and write output
+        wpca.window_parser()
+        data = WPCA_Data(args_dct['prefix'], wpca)
+
+
+    ## ELSE READ IN EXISTING DATA:
+
+    elif mode in ['polarize', 'flip', 'chromplot']:
+
+        # print info
+        log.info('Reading existing data')
+        log.newline()
+
+        # read data
+        data = WPCA_Data(args_dct['prefix'])
+
+
+    ## MODE: POLARIZE
+
+    if mode in ['pca', 'pcangsd', 'polarize'] \
+        and not args_dct['polarize'] == 'skip':
+
+        # print info
+        log.info('Polarizing PC data')
+        log.newline()
+
+        # load module & instantiate
+        from modules.transform_data import Polarize
+        polarize = Polarize()
+
+        # adaptive
+        if args_dct['polarize'] == 'auto':
+            if args_dct['pol_pc'] == 'both':
+                data.modify_data(
+                    'pc_1', polarize.adaptive, args_dct['n_prev_windows']
+                )
+                data.modify_data(
+                    'pc_2', polarize.adaptive, args_dct['n_prev_windows']
+                )
+            else:
+                data.modify_data(
+                    'pc_' + str(args_dct['pol_pc']), polarize.adaptive, \
+                        args_dct['n_prev_windows']
+                )
+
+        # using guide samples
+        if args_dct['polarize'] == 'guide_samples':
+            if args_dct['pol_pc'] == 'both':
+                data.modify_data(
+                    'pc_1', polarize.guide_samples, args_dct['guide_sample_lst']
+                )
+                data.modify_data(
+                    'pc_2', polarize.guide_samples, args_dct['guide_sample_lst']
+                )
+            else:
+                data.modify_data(
+                    'pc_' + str(args_dct['pol_pc']), polarize.guide_samples, \
+                        args_dct['guide_sample_lst']
+                )
+
+
+    ## MODE: FLIP
+
+    if mode == 'flip':
+
+        # print info
+        log.info('Flipping PC data')
+        log.newline()
+
+        # load module & instantiate
+        from modules.transform_data import Flip
+        flip = Flip()
+
+        # reflect (entire)
+        if args_dct['reflect']:
+            if args_dct['flip_pc'] == 'both':
+                data.modify_data(
+                    'pc_1', flip.flip_chrom
+                )
+                data.modify_data(
+                    'pc_2', flip.flip_chrom
+                )
+            else:
+                data.modify_data(
+                    'pc_' + str(args_dct['flip_pc']), flip.flip_chrom
+                )
+        # flip specified windows
+        if args_dct['flip_windows']:
+            if args_dct['flip_pc'] == 'both':
+                data.modify_data(
+                    'pc_1', flip.flip_windows,
+                    args_dct['flip_window_lst']
+                )
+                data.modify_data(
+                    'pc_2', flip.flip_windows,
+                    args_dct['flip_window_lst']
+                )
+            else:
+                data.modify_data(
+                    'pc_' + str(args_dct['flip_pc']), flip.flip_windows,
+                    args_dct['flip_window_lst']
+                )
+
+
+    ## WRITE DATA TO FILES
+
+    data.to_files()
+
+
+    ## MODE: CHROMPLOT
+
+    if mode  == 'chromplot':
+
+        # print info
+        log.info('Creating chromosome plot')
+        log.newline()
+
+        # infer stat_var
+        if args_dct['plot_var'] == 'pc_1':
+            stat_var = f'{args_dct["plot_var"]}_ve'
+        if args_dct['plot_var'] == 'pc_2':
+            stat_var = f'{args_dct["plot_var"]}_ve'
+        if args_dct['plot_var'] == 'hetp':
+            stat_var = 'n_var'
+
+        # load module & instantiate
+        from modules.plot import Plot
+        plot = Plot(args_dct['plot_var'],
+                    stat_var=stat_var,
+                    prefix=args_dct['prefix'],
+                    data=data,
+                    chrom=args_dct['start'],
+                    start=args_dct['start'],
+                    end=args_dct['end'],
+                    metadata_path=args_dct['metadata_path'],
+                    color_by=args_dct['color_by'],
+                    hex_code_dct=args_dct['hex_code_dct'],
+                    interval=args_dct['interval'],
+                    chromplot_w=config.CHROMPLOT_W,
+                    chromplot_h=config.CHROMPLOT_H,
+                    plot_fmt_lst=args_dct['plot_fmt_lst'],
+        )
+        plot.chromplot()
+        plot.savefig()
+
+
+    # MODE: GENOMEPLOT
+
+    if mode == 'genomeplot':
+
+        # print info
+        log.info('Creating genome-wide plot')
+        log.newline()
+
+        # load module & instantiate
+        from modules.plot import Plot
+        plot = Plot(args_dct['plot_var'],
+                    run_prefix=args_dct['run_prefix'],
+                    run_id_lst=args_dct['run_id_lst'],
+                    metadata_path=args_dct['metadata_path'],
+                    color_by=args_dct['color_by'],
+                    hex_code_dct=args_dct['hex_code_dct'],
+                    interval=args_dct['interval'],
+                    genomeplot_w=config.GENOMEPLOT_W,
+                    genomeplot_h=config.GENOMEPLOT_H,
+                    plot_fmt_lst=args_dct['plot_fmt_lst'],
+        )
+        plot.genomeplot()
+        plot.savefig()
+
+
+# EXECUTE
+if __name__ == "__main__":
+    main()

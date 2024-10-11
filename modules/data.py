@@ -98,7 +98,7 @@ class WPCA_Data:
 
     def from_files(self):
         '''
-        Compile from out_dct of w_pca instance.
+        Compile from out_dct of WPCA instance.
         '''
 
         # print info
