@@ -422,6 +422,10 @@ class WPCA:
             if self.file_fmt == 'BEAGLE':
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
+                
+            # use var_file_sample_lst if no samples specified
+            if self.sample_lst is None:
+                self.sample_lst = var_file_sample_lst
 
             # obtain index positions
             sample_idx_lst = [
@@ -621,3 +625,4 @@ class WPCA:
         # print exit message
         log.newline()
         log.info('Processed all windows')
+        log.newline()

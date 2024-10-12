@@ -86,10 +86,6 @@ def main():
 
     elif mode in ['polarize', 'flip', 'chromplot']:
 
-        # print info
-        log.info('Reading existing data')
-        log.newline()
-
         # read data
         data = WPCA_Data(args_dct['prefix'])
 
@@ -182,8 +178,10 @@ def main():
 
 
     ## WRITE DATA TO FILES
-
-    data.to_files()
+    
+    # except plot modes
+    if mode in ['pca', 'polarize', 'flip']:
+        data.to_files()
 
 
     ## MODE: CHROMPLOT
@@ -228,6 +226,7 @@ def main():
     if mode == 'genomeplot':
 
         # print info
+        log.newline()
         log.info('Creating genome-wide plot')
         log.newline()
 
@@ -246,6 +245,14 @@ def main():
         )
         plot.genomeplot()
         plot.savefig()
+
+
+    # END
+
+    # print info
+    log.info('Done')
+    log.newline()
+
 
 
 # EXECUTE

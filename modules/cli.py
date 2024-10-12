@@ -72,7 +72,7 @@ class CLI:
         # add subparser
         pca_parser = self.subparsers.add_parser(
             'pca', help='Perform windowed PCA on called genotypes (GT),'
-            ' accepts VCF or TSV as input.'
+            ' or genotype likelihoods (GL/PL).'
         )
 
         # positional arguments
@@ -453,4 +453,6 @@ class CLI:
             self.args_dct['genomeplot_h'] = config.GENOMEPLOT_H
         if not 'n_threads' in self.args_dct:                                    # WHY IS THIS NOT AUTOMATICALLY IN THE args_dct ?
             self.args_dct['n_threads'] = config.N_THREADS
+        if not 'sample_lst' in self.args_dct:                                    # WHY IS THIS NOT AUTOMATICALLY IN THE args_dct ?
+            self.args_dct['sample_lst'] = None
 
