@@ -228,8 +228,10 @@ class Flip:
             if w not in pc_df.index:
                 missing_lst.append(w)
         if missing_lst != []:
+            log.newline()
             log.error('The following windows are not represented in the'
                       f' supplied data: {",".join(missing_lst)}.')
+            log.newline()
 
         # flip windows
         pc_df.loc[w_flip_lst] *= -1

@@ -47,7 +47,6 @@ def main():
         # print info
         log.newline()
         log.info('Performing windowed PCA')
-        log.newline()
 
         # determine file format
         if args_dct['variant_file_path'].endswith('.gz'):
@@ -96,8 +95,8 @@ def main():
         and not args_dct['polarize'] == 'skip':
 
         # print info
-        log.info('Polarizing PC data')
         log.newline()
+        log.info('Polarizing PC data')
 
         # load module & instantiate
         from modules.transform_data import Polarize
@@ -139,8 +138,8 @@ def main():
     if mode == 'flip':
 
         # print info
-        log.info('Flipping PC data')
         log.newline()
+        log.info('Flipping PC data')
 
         # load module & instantiate
         from modules.transform_data import Flip
@@ -189,8 +188,8 @@ def main():
     if mode  == 'chromplot':
 
         # print info
-        log.info('Creating chromosome plot')
         log.newline()
+        log.info('Creating chromosome plot')
 
         # infer stat_var
         if args_dct['plot_var'] == 'pc_1':
@@ -228,7 +227,6 @@ def main():
         # print info
         log.newline()
         log.info('Creating genome-wide plot')
-        log.newline()
 
         # load module & instantiate
         from modules.plot import Plot
@@ -250,6 +248,7 @@ def main():
     # END
 
     # print info
+    log.newline()
     log.info('Done')
     log.newline()
 

@@ -115,8 +115,10 @@ class Plot:
                 self.metadata_path, sep='\t', index_col=0, dtype=str
             )
             if len(self.metadata_df.index) != len(set(self.metadata_df.index)):
+                log.newline()
                 log.error('The provided metadata file contains non-unique'
                           ' sample IDs')
+                log.newline()
 
 
             # subset and reorder metadata_df to match data_df individuals
@@ -126,8 +128,10 @@ class Plot:
 
             # if individuals are missing in the metadata print error message
             if len(self.metadata_df) != len(sample_lst):
+                log.newline()
                 log.error('One or more sample IDs are missing in the'
                           ' provided metadata file')
+                log.newline()
 
 
             # add metadata columns to data_df
@@ -169,7 +173,9 @@ class Plot:
         if self.hex_code_dct:
             self.color_dct = self.hex_code_dct
             if not all(x in self.color_dct.keys() for x in self.group_lst):
+                log.newline()
                 log.error('HEX codes missing for one or more groups')
+                log.newline()
 
         else:
             import plotly.colors as pc
@@ -534,7 +540,7 @@ class Plot:
                     type='line',
                     x0=genome_pos, x1=genome_pos,
                     y0=0, y1=1, yref='paper',
-                    line=dict(color='black', width=1, dash='dot',),
+                    line=dict(color='#000000', width=.8, dash='1px, 1px',),
                 )
             )
 

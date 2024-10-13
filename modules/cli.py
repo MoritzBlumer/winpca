@@ -71,15 +71,15 @@ class CLI:
 
         # add subparser
         pca_parser = self.subparsers.add_parser(
-            'pca', help='Perform windowed PCA on called genotypes (GT),'
-            ' or genotype likelihoods (GL/PL).'
+            'pca', help='Perform windowed PCA on called genotypes (GT) or on'
+            ' genotype likelihoods (GL/PL).'
         )
 
         # positional arguments
         pca_parser.add_argument(
             dest='variant_file_path', metavar='<VARIANT_FILE>', help='Path to'
-            ' variant file (optionally gzipped VCF or TSV; see documentation'
-            ' for input file specifications).')
+            ' variant file (optionally gzipped VCF, TSV or BEAGLE; see'
+            ' documentation for input file specifications).')
         pca_parser.add_argument(
             dest='region', metavar='<REGION>', help='Genomic region in format'
             ' "chrom:start-end".')
@@ -106,7 +106,7 @@ class CLI:
             '-p', '--polarize', dest='polarize', required=False,
             default=config.POL_MODE, choices=['auto', 'guide_samples', 'skip'],
             metavar='\b', help='Sign polarization strategy'
-            ' ("auto"/"guide_samples" or "skip") [default:'
+            ' ("auto", "guide_samples" or "skip") [default:'
             f' "{config.POL_MODE}"].')
         pca_parser.add_argument(
             '-g', '--guide_samples', dest='guide_samples', required=False,
@@ -179,9 +179,9 @@ class CLI:
             ' one position/region per line.')
         flip_parser.add_argument(
             '--r', '--reflect', dest='reflect', required=False,
-            action='store_true', help='Set flag to flip all windows, i.e.'
-            ' reflect all values of the target chromosome. --r/--reflect is'
-            ' applied independently from -w/--windows, i.e. they can be'
+            action='store_true', help='Set flag to reflect the entire'
+            ' chromosome, i.e. to flip all windows. --r/--reflect is'
+            ' applied independently from -w/--windows and both can be'
             ' combined.')
         flip_parser.add_argument(
             '-c', '--principal_component', dest='flip_pc', required=False,
@@ -192,14 +192,14 @@ class CLI:
 
     def chromplot(self):
         '''
-        Plot PC1, PC2, heterozygosity and per window stats for all input
-        chromosomes.
+        Plot PC1, PC2, heterozygosity and per window stats for a specified input
+        chromosome.
         '''
 
         # add subparser
         chromplot_parser = self.subparsers.add_parser(
             'chromplot', help='Plot PC1, PC2, heterozygosity and per window'
-            ' stats for all input chromosomes.'
+            ' stats for a specified input chromosome.'
         )
 
         # positional arguments
@@ -212,13 +212,13 @@ class CLI:
         chromplot_parser.add_argument(
             '-p', '--plot_variable', dest='plot_var', required=False,
             choices=['PC1', 'PC2', 'het'], default=config.PLOT_VAR,
-            metavar='\b', help='Specify what to plot ("PC1", "PC2" or "HET")'
-            f' [default: {config.PLOT_VAR}].')
+            metavar='\b', help='Specify which values to plot ("PC1", "PC2" or'
+            f' "het") [default: {config.PLOT_VAR}].')
         chromplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', required=False,
-            metavar='\b', help='Path to metadata TSV where first column are '
-            ' sample names. Other columns will be used to annotate data in HTML'
-            ' plot.')
+            metavar='\b', help='Path to metadata TSV where first column are'
+            ' sample IDs. Additional columns will be used to annotate data in'
+            ' HTML plot.')
         chromplot_parser.add_argument(
             '-g', '--groups', dest='color_by', required=False, metavar='\b',
             help='Metadata column for color-grouping. Requires -m/--metadata.')
@@ -238,20 +238,19 @@ class CLI:
 
     def genomeplot(self):
         '''
-        Plot PC1, PC2, heterozygosity and per window stats for all input
-        chromosomes.
+        Plot PC1, PC2 or heterozygosity for the specified input chromosomes.
         '''
 
         # add subparser
         genomeplot_parser = self.subparsers.add_parser(
-            'genomeplot', help='Plot PC1, PC2, heterozygosity and per window'
-            ' stats for all input chromosomes.'
+            'genomeplot', help='Plot PC1, PC2 or heterozygosity for the'
+            ' specified input chromosomes.'
         )
 
         # positional arguments
         genomeplot_parser.add_argument(
-            dest='run_prefix', metavar='<RUN_PREFIX>', help='Prefix shared by all'
-            ' chromosomes runs to include in genome-wide plot.')
+            dest='run_prefix', metavar='<RUN_PREFIX>', help='Prefix shared by'
+            ' all chromosomes runs to include in genome-wide plot.')
         genomeplot_parser.add_argument(
             dest='run_ids', metavar='<RUN_IDS>', help='Comma-separated list of'
             ' run IDs to include, format: e.g. {prefix}.{run_id}.pc_1.tsv.gz.'
@@ -261,13 +260,13 @@ class CLI:
         genomeplot_parser.add_argument(
             '-p', '--plot_variable', dest='plot_var', required=False,
             choices=['PC1', 'PC2', 'het'], default=config.PLOT_VAR,
-            metavar='\b', help='Specify what to plot ("PC1", "PC2" or "HET")'
-            f' [default: {config.PLOT_VAR}].')
+            metavar='\b', help='Specify which values to plot ("PC1", "PC2" or'
+            f' "het") [default: {config.PLOT_VAR}].')
         genomeplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', required=False,
             metavar='\b', help='Path to metadata TSV where first column are'
-            ' sample names. Other columns will be used to annotate data in HTML'
-            ' plot.')
+            ' sample IDs. Additional columns will be used to annotate data in'
+            ' HTML plot.')
         genomeplot_parser.add_argument(
             '-g', '--groups', dest='color_by', required=False, metavar='\b',
             help='Metadata column for color-grouping. Requires -m/--metadata.')

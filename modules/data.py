@@ -104,7 +104,6 @@ class WPCA_Data:
         # print info
         log.newline()
         log.info(f'Reading data from prefix "{self.prefix}*"')
-        log.newline()
 
         # flush existing instance variables
         self.pc_1, self.pc_2, self.hetp, self.miss, self.stat = \

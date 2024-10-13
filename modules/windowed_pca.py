@@ -625,4 +625,4 @@ class WPCA:
         # print exit message
         log.newline()
         log.info('Processed all windows')
-        log.newline()
+        
