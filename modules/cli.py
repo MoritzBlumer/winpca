@@ -44,7 +44,7 @@ class CLI:
 
         # allowed variant file suffixes
         self.variant_file_suffixes = [
-            '.vcf', '.vcf.gz', '.tsv', '.tsv.gz', 'beagle', 'beagle.gz',
+            '.vcf', '.vcf.gz', '.tsv', '.tsv.gz', '.beagle', '.beagle.gz',
         ]
 
         self.plot_file_suffixes = [
