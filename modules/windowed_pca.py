@@ -465,7 +465,7 @@ class WPCA:
                         q_chrom = line[0]
                         if q_chrom != self.chrom: continue
                         filter_field = line[6]
-                        if filter_field != 'PASS': continue
+                        # if filter_field != 'PASS': continue                     # BRING BACK
                         pos = int(line[1])
                         gts = [line[9:][idx].split(':')[0] for idx in sample_idx_lst]
                         gts = [self.gt_code_dct[x] for x in gts]
