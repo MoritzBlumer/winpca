@@ -47,6 +47,7 @@ def main():
         # print info
         log.newline()
         log.info('Performing windowed PCA')
+        log.newline()
 
         # determine file format
         if args_dct['variant_file_path'].endswith('.gz'):
@@ -83,7 +84,7 @@ def main():
 
     ## ELSE READ IN EXISTING DATA:
 
-    elif mode in ['polarize', 'flip', 'chromplot']:
+    if mode in ['polarize', 'flip', 'chromplot']:
 
         # read data
         data = WPCA_Data(args_dct['prefix'])
@@ -91,7 +92,7 @@ def main():
 
     ## MODE: POLARIZE
 
-    if mode in ['pca', 'pcangsd', 'polarize'] \
+    if mode in ['pca', 'polarize'] \
         and not args_dct['polarize'] == 'skip':
 
         # print info
