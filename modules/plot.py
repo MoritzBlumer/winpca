@@ -184,8 +184,7 @@ class Plot:
                 self.group_lst[idx]: def_col_lst[idx % len(def_col_lst)] \
                     for idx in range(len(self.group_lst))
             }
-        import sys
-        print(self.color_dct, file=sys.stderr, flush=True)
+
 
     def savefig(self):
         '''
