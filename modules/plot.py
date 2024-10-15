@@ -176,6 +176,9 @@ class Plot:
                 log.newline()
                 log.error('HEX codes missing for one or more groups')
                 log.newline()
+            else:
+                # set color_dct keys as group_lst to set plotting order
+                self.group_lst = list(self.color_dct.keys())
 
         else:
             import plotly.colors as pc

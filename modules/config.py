@@ -27,9 +27,8 @@ PLOT_INTERVAL = None       # plot only every nth value (10th if specifying 10)
 
 
 
-
 ## SETTINGS
-#  (these can only be set here, i.e. no CLI arguments)
+#  (these can only be changed here, i.e. no CLI arguments)
 
 # pca
 MIN_VAR_PER_W = 25        # min # of variants per window, otherwise empty output
