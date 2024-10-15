@@ -191,9 +191,9 @@ class Plot:
         '''
         for fmt in self.plot_fmt_lst:
             if fmt == 'html':
-                self.fig.write_html(f'{self.prefix}.{fmt}')
+                self.fig.write_html(f'{self.prefix}.{self.plot_var}.{fmt}')
             else:
-                self.fig.write_image(f'{self.prefix}.{fmt}')
+                self.fig.write_image(f'{self.prefix}.{self.plot_var}.{fmt}')
 
 
     def chromplot(self):

@@ -73,6 +73,7 @@ def main():
             w_step=args_dct['w_step'],
             min_var_per_w=args_dct['min_var_per_w'],
             skip_monomorphic=args_dct['skip_monomorphic'],
+            vcf_pass_filter=args_dct['vcf_pass_filter'],
             min_maf=args_dct['min_maf'],
             n_threads=args_dct['n_threads'],
             )

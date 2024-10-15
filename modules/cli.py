@@ -431,13 +431,13 @@ class CLI:
         if hasattr(args, 'flip_windows'):
             self.args_dct['flip_window_lst'] = flip_window_lst
 
-        # fill in default values from config if unset
-        if not 'skip_monomorphic' in self.args_dct:
-            self.args_dct['skip_monomorphic'] = config.SKIP_MONOMORPHIC
-        if not 'min_var_per_w' in self.args_dct:
-            self.args_dct['min_var_per_w'] = config.MIN_VAR_PER_W
-        if not 'n_prev_windows' in self.args_dct:
-            self.args_dct['n_prev_windows'] = config.N_PREV_WINDOWS
+        # add in settings from config
+        self.args_dct['skip_monomorphic'] = config.SKIP_MONOMORPHIC
+        self.args_dct['min_var_per_w'] = config.MIN_VAR_PER_W
+        self.args_dct['vcf_pass_filter'] = config.VCF_PASS_FILTER      
+        self.args_dct['n_prev_windows'] = config.N_PREV_WINDOWS
+
+        # add default values from config if unset
         if not 'pol_pc' in self.args_dct:
             self.args_dct['pol_pc'] = config.POL_PC
         if not 'flip_pc' in self.args_dct:
@@ -452,6 +452,9 @@ class CLI:
             self.args_dct['genomeplot_h'] = config.GENOMEPLOT_H
         if not 'n_threads' in self.args_dct:                                    # WHY IS THIS NOT AUTOMATICALLY IN THE args_dct ?
             self.args_dct['n_threads'] = config.N_THREADS
+        
+        # add sample_lst if not unset
         if not 'sample_lst' in self.args_dct:                                    # WHY IS THIS NOT AUTOMATICALLY IN THE args_dct ?
             self.args_dct['sample_lst'] = None
+
 

@@ -45,6 +45,7 @@ class WPCA:
                  w_size, w_step,
                  min_var_per_w,
                  skip_monomorphic,
+                 vcf_pass_filter,
                  min_maf,
                  n_threads,
                  ):
@@ -63,6 +64,7 @@ class WPCA:
         self.w_step = w_step
         self.min_var_per_w = min_var_per_w
         self.skip_monomorphic = skip_monomorphic
+        self.vcf_pass_filter = vcf_pass_filter
         self.min_maf = min_maf
         self.n_threads = n_threads
 
@@ -465,7 +467,8 @@ class WPCA:
                         q_chrom = line[0]
                         if q_chrom != self.chrom: continue
                         filter_field = line[6]
-                        # if filter_field != 'PASS': continue                     # BRING BACK
+                        if filter_field != 'PASS' and self.vcf_pass_filter: 
+                            continue
                         pos = int(line[1])
                         gts = [line[9:][idx].split(':')[0] for idx in sample_idx_lst]
                         gts = [self.gt_code_dct[x] for x in gts]
@@ -508,6 +511,9 @@ class WPCA:
                         if q_chrom != self.chrom: continue
                         format_field = line[8].split(':')
                         if not self.var_fmt in format_field: continue
+                        filter_field = line[6]
+                        if filter_field != 'PASS' and self.vcf_pass_filter: 
+                            continue
                         pos = int(line[1])
                         gt_fields = line[9:]
                         # get each sample's GL field as a list
@@ -578,6 +584,9 @@ class WPCA:
                         format_field = line[8].split(':')
                         if not self.var_fmt in format_field: continue
                         pos = int(line[1])
+                        filter_field = line[6]
+                        if filter_field != 'PASS' and self.vcf_pass_filter: 
+                            continue
                         gt_fields = line[9:]
                         # get each sample's PL field as a list
                         pls = [
