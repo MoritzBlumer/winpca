@@ -428,7 +428,7 @@ class CLI:
             self.args_dct['plot_fmt_lst'] = plot_fmt_lst
         if hasattr(args, 'run_ids'):
             self.args_dct['run_id_lst'] = run_id_lst
-        if hasattr(args, 'flip_windows'):
+        if hasattr(args, 'flip_windows') and flip_window_lst:
             self.args_dct['flip_window_lst'] = flip_window_lst
 
         # add in settings from config
