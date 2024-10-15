@@ -305,10 +305,11 @@ class CLI:
         if hasattr(args, 'hex_codes') and not hasattr(args, 'color_by'):
             self.parser.error(
                 '-g/--groups is required if -c/--colors is set.')
-        if hasattr(args, 'flip_windows'):
-            if not args.reflect and args.flip_windows: 
+        if not hasattr(args, 'reflect') \
+            and not hasattr(args, 'flip_windows'):
+#            if not args.reflect and args.flip_windows: 
                 self.parser.error(
-                    'One of --r/--reflect and -w,-windows must be set.')
+                    'One of --r/--reflect and -w,--windows must be set.')
 
         # check formatting
         if hasattr(args, 'variant_file_path'):
