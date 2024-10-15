@@ -394,7 +394,7 @@ class Plot:
         '''
 
         # import data module
-        from modules.data import WPCA_Data
+        from modules.data import WPCAData
 
 
         # LOAD & PREPARE DATA
@@ -412,7 +412,7 @@ class Plot:
         for run_id in self.run_id_lst:
 
             # load data
-            data = WPCA_Data(self.run_prefix + run_id)
+            data = WPCAData(self.run_prefix + run_id)
             self.data_df = getattr(data, self.plot_var)
 
             # subset if interval (-i) is specified

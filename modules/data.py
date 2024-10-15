@@ -15,7 +15,7 @@ log = Log()
 
 ## CLASSES
 
-class WPCA_Data:
+class WPCAData:
     '''
     Central container for PCA and associated data. Compiles object from
     existing output files (via prefix) or directly from w_pca instance. Data
@@ -111,14 +111,14 @@ class WPCA_Data:
 
         # pc_1
         self.pc_1 = pd.read_csv(
-            f'{self.prefix}.{self.suffix_dct["pc_2"]}',
+            f'{self.prefix}.{self.suffix_dct["pc_1"]}',
             sep='\t',
             index_col='pos',
         )
 
         # pc_2
         self.pc_2 = pd.read_csv(
-            f'{self.prefix}.{self.suffix_dct["pc_1"]}',
+            f'{self.prefix}.{self.suffix_dct["pc_2"]}',
             sep='\t',
             index_col='pos',
         )

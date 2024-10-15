@@ -9,7 +9,7 @@ from modules import config
 
 ## IMPORT MODULES
 from modules.cli import CLI
-from modules.data import WPCA_Data
+from modules.data import WPCAData
 from modules.log import Log
 
 ## INSTANTIATE LOGGER
@@ -79,7 +79,7 @@ def main():
 
         # run, parse and write output
         wpca.window_parser()
-        data = WPCA_Data(args_dct['prefix'], wpca)
+        data = WPCAData(args_dct['prefix'], wpca)
 
 
     ## ELSE READ IN EXISTING DATA:
@@ -87,7 +87,7 @@ def main():
     if mode in ['polarize', 'flip', 'chromplot']:
 
         # read data
-        data = WPCA_Data(args_dct['prefix'])
+        data = WPCAData(args_dct['prefix'])
 
 
     ## MODE: POLARIZE
