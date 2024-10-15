@@ -545,5 +545,8 @@ class Plot:
             )
 
         # save image (using self.prefix to determine output prefix)
-        self.prefix = f'{self.run_prefix}{self.plot_var}_genomeplot'
+        if self.prefix.endswith('/'):
+            self.prefix = f'{self.run_prefix}genomeplot'
+        else:
+            self.prefix = f'{self.run_prefix}.genomeplot'
         self.savefig()
