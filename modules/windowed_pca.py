@@ -426,9 +426,9 @@ class WPCA:
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
                 
-            # use var_file_sample_lst if no samples specified
+            # use var_file_sample_lst (drop duplicates) if no samples specified
             if self.sample_lst is None:
-                self.sample_lst = var_file_sample_lst
+                self.sample_lst = list(dict.fromkeys(var_file_sample_lst))
 
             # obtain index positions
             sample_idx_lst = [
