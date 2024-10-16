@@ -473,8 +473,10 @@ class WPCA:
                         gts = [line[9:][idx].split(':')[0] for idx in sample_idx_lst]
                         gts = [self.gt_code_dct[x] for x in gts]
                         if self.skip_monomorphic and len(set(gts)) == 1: 
-                            print(f'skipped {pos}')
                             continue
+                        if -1 in gts:                                           ### ADD FOR ALL GT
+                        #   print(f'skipped {pos}', flush=True)                 ###
+                           continue                                             ###
                         while self.w_stop < pos:
                             if self.win: self.gt_process_win()
                             if self.stop < self.w_stop: break
