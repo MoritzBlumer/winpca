@@ -183,7 +183,7 @@ class WPCA:
         # non-empty: trim off pos info, convert to numpy arr, drop missing
         # sites or mean impute, apply min_maf filter
         if self.win:
-            self.w_gt_arr = np.array([x[1:] for x in self.win], dtype=np.int8)
+            self.w_gt_arr = np.array([x[1:] for x in self.win],dtype=np.float32)
             if self.gt_mean_impute:
                 if self.min_maf:
                     self.gt_min_maf_filter()
