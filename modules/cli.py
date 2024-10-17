@@ -84,7 +84,7 @@ class CLI:
             dest='region', metavar='<REGION>', help='Genomic region in format'
             ' "chrom:start-end".')
         self.shared_arguments(pca_parser)
-        
+
         # optional arguments
         pca_parser.add_argument(
             '-s', '--samples', dest='samples', required=False, metavar='\b',
@@ -114,9 +114,9 @@ class CLI:
             ' -p/--polarize: One or more (-> comma-separated list) samples to'
             ' guide PC sign polarization.')
         pca_parser.add_argument(
-            '-v', '--var_format', dest='var_fmt', required=False, 
-            default=config.VAR_FMT, choices=['GT', 'GL', 'PL'], metavar='\b', 
-            help='Variant format ("GT", "GL", "PL") [default:' 
+            '-v', '--var_format', dest='var_fmt', required=False,
+            default=config.VAR_FMT, choices=['GT', 'GL', 'PL'], metavar='\b',
+            help='Variant format ("GT", "GL", "PL") [default:'
             f' {config.VAR_FMT}]. GL/PL invoke PCAngsd usage.')
         pca_parser.add_argument(
             '-t', '--threads', dest='threads', required=False, type=int,
@@ -207,7 +207,7 @@ class CLI:
         chromplot_parser.add_argument(
             dest='region', metavar='<REGION>', help='Genomic region in format'
             ' "chrom:start-end".')
-        
+
         # optional arguments
         chromplot_parser.add_argument(
             '-p', '--plot_variable', dest='plot_var', required=False,
@@ -255,7 +255,7 @@ class CLI:
             dest='run_ids', metavar='<RUN_IDS>', help='Comma-separated list of'
             ' run IDs to include, format: e.g. {prefix}.{run_id}.pc_1.tsv.gz.'
             ' Also used to determine plotting order.')
-        
+
         # positional arguments
         genomeplot_parser.add_argument(
             '-p', '--plot_variable', dest='plot_var', required=False,
@@ -308,8 +308,8 @@ class CLI:
         if args.winpca == 'flip' \
             and not hasattr(args, 'reflect') \
             and not hasattr(args, 'flip_windows'):
-                self.parser.error(
-                    'One of --r/--reflect and -w,--windows must be set.')
+            self.parser.error(
+                'One of --r/--reflect and -w,--windows must be set.')
 
         # check formatting
         if hasattr(args, 'variant_file_path'):
@@ -435,8 +435,9 @@ class CLI:
         # add in settings from config
         self.args_dct['skip_monomorphic'] = config.SKIP_MONOMORPHIC
         self.args_dct['min_var_per_w'] = config.MIN_VAR_PER_W
-        self.args_dct['vcf_pass_filter'] = config.VCF_PASS_FILTER      
+        self.args_dct['vcf_pass_filter'] = config.VCF_PASS_FILTER
         self.args_dct['n_prev_windows'] = config.N_PREV_WINDOWS
+        self.args_dct['gt_mean_impute'] = config.GT_MEAN_IMPUTE
 
         # add default values from config if unset
         if not 'pol_pc' in self.args_dct:
@@ -451,11 +452,9 @@ class CLI:
             self.args_dct['genomeplot_w'] = config.GENOMEPLOT_W
         if not 'genomeplot_h' in self.args_dct:
             self.args_dct['genomeplot_h'] = config.GENOMEPLOT_H
-        if not 'n_threads' in self.args_dct:                                    # WHY IS THIS NOT AUTOMATICALLY IN THE args_dct ?
+        if not 'n_threads' in self.args_dct:                                    # WHY NEED TO ADD
             self.args_dct['n_threads'] = config.N_THREADS
-        
+
         # add sample_lst if not unset
-        if not 'sample_lst' in self.args_dct:                                    # WHY IS THIS NOT AUTOMATICALLY IN THE args_dct ?
+        if not 'sample_lst' in self.args_dct:                                   # WHY NEED TO ADD
             self.args_dct['sample_lst'] = None
-
-

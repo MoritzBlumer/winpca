@@ -45,6 +45,7 @@ class WPCA:
                  w_size, w_step,
                  min_var_per_w,
                  skip_monomorphic,
+                 gt_mean_impute,
                  vcf_pass_filter,
                  min_maf,
                  n_threads,
@@ -64,6 +65,7 @@ class WPCA:
         self.w_step = w_step
         self.min_var_per_w = min_var_per_w
         self.skip_monomorphic = skip_monomorphic
+        self.gt_mean_impute = gt_mean_impute
         self.vcf_pass_filter = vcf_pass_filter
         self.min_maf = min_maf
         self.n_threads = n_threads
@@ -94,17 +96,17 @@ class WPCA:
             '1|0':  1,
             '1/1':  2,
             '1|1':  2,
-            './.': -1,
-            '.|.': -1,
-            '0/.': -1,
-            '0|.': -1,
-            './0': -1,
-            '.|0': -1,
-            '1/.': -1,
-            '1|.': -1,
-            './1': -1,
-            '.|1': -1,
-            '.':   -1,
+            './.': np.nan,
+            '.|.': np.nan,
+            '0/.': np.nan,
+            '0|.': np.nan,
+            './0': np.nan,
+            '.|0': np.nan,
+            '1/.': np.nan,
+            '1|.': np.nan,
+            './1': np.nan,
+            '.|1': np.nan,
+            '.':   np.nan,
         }
 
 
@@ -122,35 +124,74 @@ class WPCA:
         log.info(f'Processed {self.w_idx}/{self.n_windows} windows')
 
 
+    def gt_mean_imputation(self):
+        '''
+        Mean impute missing GT calls.
+        '''
+
+        # calculate row/site means (ignoring NaN)
+        row_mean_arr = np.nanmean(self.w_gt_arr, axis=1)
+
+        # fetch indices of rows/sites WITH missing call(s)
+        miss_mask_arr = np.isnan(self.w_gt_arr)
+
+        # replace NaN with row/site means
+        self.w_gt_arr[miss_mask_arr] = np.take(
+            row_mean_arr, np.where(miss_mask_arr)[0]
+        )
+
+
+    def gt_drop_missing_sites(self):
+        '''
+        remove any site with at least one missing GT call.
+        '''
+
+        # fetch indices of rows/sites WITHOUT missing call(s)
+        mask = ~np.isnan(self.w_gt_arr).any(axis=1)
+
+        # drop those rows/sites
+        self.w_gt_arr = self.w_gt_arr[mask]
+
+
     def gt_min_maf_filter(self):
         '''
         Drop SNPs with minor allele frequency below specified value.
         '''
 
-        # allele count
-        n_alleles = 2 * self.w_gt_arr.shape[1]
+        # count # called GTs per row/site (np.sum counts True), *2 because diploid
+        allele_counts_arr = np.sum(~np.isnan(self.w_gt_arr), axis=1) * 2
+
+        # count # alleles per row/site
+        allele_sums_arr = np.nansum(self.w_gt_arr, axis=1)
 
         # calculate allel frequencies and multiple with -1 if AF > 0.5 (because
         # input data may not be polarized by major/minor allel)
-        afs = np.sum(self.w_gt_arr, axis=1) / n_alleles
-        afs[afs > 0.5] = 1 - afs[afs > 0.5]
+        af_arr = allele_sums_arr / allele_counts_arr
+        af_arr[af_arr > 0.5] = 1 - af_arr[af_arr > 0.5]
 
         # keep only sites where AF >= min_maf
-        self.w_gt_arr = self.w_gt_arr[afs >= self.min_maf]
+        self.w_gt_arr = self.w_gt_arr[af_arr >= self.min_maf]
 
 
     def gt_process_win(self):
         '''
-        Remove POS info, convert to numpy array, apply min_maf filter, call
+        Remove POS info, convert to numpy array, apply min_maf filter,
+        drop rows/sites with missing call(s) OR mean impute, then apply
         target function or return empty array if there are no variants.
         '''
 
-        # non-empty: trim off pos info, convert to numpy arr, apply min_maf
-        # filter
+        # non-empty: trim off pos info, convert to numpy arr, drop missing
+        # sites or mean impute, apply min_maf filter
         if self.win:
             self.w_gt_arr = np.array([x[1:] for x in self.win], dtype=np.int8)
-            if self.min_maf:
-                self.gt_min_maf_filter()
+            if self.gt_mean_impute:
+                if self.min_maf:
+                    self.gt_min_maf_filter()
+                self.gt_mean_imputation()
+            else:
+                self.gt_drop_missing_sites()
+                if self.min_maf:
+                    self.gt_min_maf_filter()
 
         # empty: convert to empty numpy arr
         else:
@@ -425,7 +466,7 @@ class WPCA:
             if self.file_fmt == 'BEAGLE':
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
-                
+
             # use var_file_sample_lst (drop duplicates) if no samples specified
             if self.sample_lst is None:
                 self.sample_lst = list(dict.fromkeys(var_file_sample_lst))
@@ -467,16 +508,13 @@ class WPCA:
                         q_chrom = line[0]
                         if q_chrom != self.chrom: continue
                         filter_field = line[6]
-                        if filter_field != 'PASS' and self.vcf_pass_filter: 
+                        if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
                         pos = int(line[1])
                         gts = [line[9:][idx].split(':')[0] for idx in sample_idx_lst]
                         gts = [self.gt_code_dct[x] for x in gts]
-                        if self.skip_monomorphic and len(set(gts)) == 1: 
+                        if self.skip_monomorphic and len(set(gts)) == 1:
                             continue
-                        if -1 in gts:                                           ### ADD FOR ALL GT
-                        #   print(f'skipped {pos}', flush=True)                 ###
-                           continue                                             ###
                         while self.w_stop < pos:
                             if self.win: self.gt_process_win()
                             if self.stop < self.w_stop: break
@@ -516,7 +554,7 @@ class WPCA:
                         format_field = line[8].split(':')
                         if not self.var_fmt in format_field: continue
                         filter_field = line[6]
-                        if filter_field != 'PASS' and self.vcf_pass_filter: 
+                        if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
                         pos = int(line[1])
                         gt_fields = line[9:]
@@ -589,7 +627,7 @@ class WPCA:
                         if not self.var_fmt in format_field: continue
                         pos = int(line[1])
                         filter_field = line[6]
-                        if filter_field != 'PASS' and self.vcf_pass_filter: 
+                        if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
                         gt_fields = line[9:]
                         # get each sample's PL field as a list
