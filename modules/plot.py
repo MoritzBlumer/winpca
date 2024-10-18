@@ -37,6 +37,7 @@ class Plot:
                  run_id_lst=None,
                  metadata_path=None,
                  color_by=None,
+                 numeric=None,
                  hex_code_dct=None,
                  interval=config.PLOT_INTERVAL,
                  chromplot_w=config.CHROMPLOT_W,
@@ -58,6 +59,7 @@ class Plot:
         self.run_id_lst = run_id_lst
         self.metadata_path = metadata_path
         self.color_by = color_by
+        self.numeric = numeric
         self.hex_code_dct = hex_code_dct
         self.interval = interval
         self.chromplot_w = chromplot_w
@@ -82,6 +84,11 @@ class Plot:
             self.plot_var_disp = 'PC 2'
         elif self.plot_var == 'hetp':
             self.plot_var_disp = 'SNP Heterozygosity'
+        
+        # set color scale name (plotly) for continuous data
+        self.color_scale = 'Plasma'
+        # set allowed NA strings
+        self.na_lst = [None, 'NA', 'na', 'NaN']
 
     @staticmethod
     def subset(df, interval):
@@ -119,7 +126,6 @@ class Plot:
                 log.error('The provided metadata file contains non-unique'
                           ' sample IDs')
                 log.newline()
-
 
             # subset and reorder metadata_df to match data_df individuals
             self.metadata_df = self.metadata_df.loc[
@@ -168,9 +174,39 @@ class Plot:
         # get list of groups/ids
         self.group_lst = list(set(self.data_df[self.group_id]))
 
+        # set color_dct for continuous colors
+        if self.numeric:
+            import plotly.colors as p_colors
+            # replace None (pandas) with np.nan (numpy), else through an error
+            try:
+                val_lst = np.array(
+                    [np.nan if x in self.na_lst else x for x in self.group_lst],
+                    dtype=np.float64
+                )
+            except:
+                log.newline()
+                log.error('Provided column (-g/--groups) contains non-numerical'
+                          ' values')
+                log.newline()
+            # scale to 0-1
+            norm_val_lst = (
+                val_lst-np.nanmin(val_lst))/\
+                (np.nanmax(val_lst) - np.nanmin(val_lst)
+            )
+            # compile color_dct with all values as keys, using again None
+            # instead of np.nan
+            self.color_dct = {}
+            for val, norm_val in zip(self.group_lst, norm_val_lst):
+                if val in self.na_lst:
+                    self.color_dct[val] = 'lightgrey'
+                else:
+                    self.color_dct[val] = p_colors.sample_colorscale(
+                        self.color_scale, [norm_val],
+                    )[0]
+
         # define colors based on plotly default colors or specified HEX codes;
         # print error messages if HEX codes are missing for specified groups
-        if self.hex_code_dct:
+        elif self.hex_code_dct:
             self.color_dct = self.hex_code_dct
             if not all(x in self.color_dct.keys() for x in self.group_lst):
                 log.newline()
@@ -180,9 +216,10 @@ class Plot:
                 # set color_dct keys as group_lst to set plotting order
                 self.group_lst = list(self.color_dct.keys())
 
+        # use defaultcolors
         else:
-            import plotly.colors as pc
-            def_col_lst = pc.DEFAULT_PLOTLY_COLORS
+            import plotly.colors as p_colors
+            def_col_lst = p_colors.DEFAULT_PLOTLY_COLORS
             self.color_dct = {
                 self.group_lst[idx]: def_col_lst[idx % len(def_col_lst)] \
                     for idx in range(len(self.group_lst))
@@ -276,7 +313,7 @@ class Plot:
                     hoverinfo='text',
                     line=dict(color='#4d61b0', width=1),
                     fill='tozeroy',
-                    connectgaps=False,  # Disable connecting gaps
+                    connectgaps=False,
                 ),
             row=1, col=1)
 
@@ -285,6 +322,9 @@ class Plot:
 
 
         # BOTTOM PANEL
+
+        # set show_legend to false if using a color scale
+        show_legend = not self.numeric
 
         # plot each specified group (-g) separately (or 'id' if unspecified)
         for group in self.group_lst:
@@ -329,6 +369,7 @@ class Plot:
                     mode='lines',
                     line=dict(color=self.color_dct[group]),
                     connectgaps=False,
+                    showlegend=show_legend,
                 ),
                 row=2, col=1
             )
@@ -387,6 +428,44 @@ class Plot:
             title_font=dict(size=12),
             title=dict(text=self.plot_var_disp, standoff=0),
         )
+
+        # plot colorscale instead of per-sample legend for numeric metadata
+        if self.numeric:
+            val_lst = [
+                float(x) for x in self.data_df[self.color_by] \
+                    if not x in self.na_lst
+            ]
+            min_val = min(val_lst)
+            max_val = max(val_lst)
+            self.fig.update_layout(
+                coloraxis=dict(
+                    colorscale=self.color_scale,
+                    cmin=min_val,
+                    cmax=max_val,
+                    colorbar=dict(
+                        len=0.7,
+                        thickness=10,
+                        title=dict(
+                            text=self.color_by,
+                            font=dict(size=10),
+                            side='right'
+                        ),
+                        tickvals=[min_val, max_val],
+                        tickfont=dict(size=10),
+                    ),
+                ),
+            )
+            self.fig.add_trace(go.Scatter(
+                x=[None],
+                y=[None],
+                mode='markers',
+                marker=dict(
+                    color=[0],
+                    coloraxis='coloraxis'
+                ),
+                showlegend=False,
+            ),
+            row=2, col=1)
 
         # save image
         self.savefig()
@@ -451,6 +530,9 @@ class Plot:
 
         # PLOT
 
+        # set show_legend to false if using a color scale
+        show_legend = not self.numeric
+
         # plot each specified group (-g) separately (or 'id' if unspecified)
         for group in self.group_lst:
 
@@ -494,6 +576,7 @@ class Plot:
                     mode='lines',
                     line=dict(color=self.color_dct[group]),
                     connectgaps=False,
+                    show_legend=show_legend,
                 ),
             )
 
@@ -547,6 +630,44 @@ class Plot:
                     line=dict(color='#000000', width=.8, dash='1px, 1px',),
                 )
             )
+
+        # plot colorscale instead of per-sample legend for numeric metadata
+        if self.numeric:
+            val_lst = [
+                float(x) for x in self.data_df[self.color_by] \
+                    if not x in self.na_lst
+            ]
+            min_val = min(val_lst)
+            max_val = max(val_lst)
+            self.fig.update_layout(
+                coloraxis=dict(
+                    colorscale=self.color_scale,
+                    cmin=min_val,
+                    cmax=max_val,
+                    colorbar=dict(
+                        len=0.7,
+                        thickness=10,
+                        title=dict(
+                            text=self.color_by,
+                            font=dict(size=10),
+                            side='right'
+                        ),
+                        tickvals=[min_val, max_val],
+                        tickfont=dict(size=10),
+                    ),
+                ),
+            )
+            self.fig.add_trace(go.Scatter(
+                x=[None],
+                y=[None],
+                mode='markers',
+                marker=dict(
+                    color=[0],
+                    coloraxis='coloraxis'
+                ),
+                showlegend=False,
+            ),
+            row=2, col=1)
 
         # save image (using self.prefix to determine output prefix)
         if self.run_prefix.endswith('/'):

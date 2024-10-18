@@ -471,7 +471,7 @@ class WPCA:
             if self.sample_lst is None:
                 self.sample_lst = list(dict.fromkeys(var_file_sample_lst))
 
-            # obtain index positions
+            # obtain index positions (returns first hit)
             sample_idx_lst = [
                 var_file_sample_lst.index(x) for x in self.sample_lst
             ]
@@ -487,8 +487,8 @@ class WPCA:
                     sample_idx_lst = [[i, i+1, i+2] for i in sample_idx_lst]
                 sample_idx_lst = [x for i in sample_idx_lst for x in i]
 
-                # remove duplicates from var_file_sample_lst (preserve order)
-                var_file_sample_lst = list(dict.fromkeys(var_file_sample_lst))
+                # # remove duplicates from var_file_sample_lst (preserve order) ## DELETE
+                # var_file_sample_lst = list(dict.fromkeys(var_file_sample_lst))## DELETE
 
         # initiate first window
         self.w_start = self.start
