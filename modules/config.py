@@ -45,4 +45,4 @@ CHROMPLOT_H = 400         # plot height in pixels
 
 # genomeplot
 GENOMEPLOT_W = 1200       # plot width in pixels
-GENOMEPLOT_H = 300        # plot height in pixels
+GENOMEPLOT_H = 500        # plot height in pixels
