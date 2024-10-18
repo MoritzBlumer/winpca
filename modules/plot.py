@@ -37,8 +37,9 @@ class Plot:
                  run_id_lst=None,
                  metadata_path=None,
                  color_by=None,
-                 numeric=None,
                  hex_code_dct=None,
+                 numeric=None,
+                 reverse=None,
                  interval=config.PLOT_INTERVAL,
                  chromplot_w=config.CHROMPLOT_W,
                  chromplot_h=config.CHROMPLOT_H,
@@ -59,8 +60,9 @@ class Plot:
         self.run_id_lst = run_id_lst
         self.metadata_path = metadata_path
         self.color_by = color_by
-        self.numeric = numeric
         self.hex_code_dct = hex_code_dct
+        self.numeric = numeric
+        self.reverse = reverse
         self.interval = interval
         self.chromplot_w = chromplot_w
         self.chromplot_h = chromplot_h
@@ -216,7 +218,6 @@ class Plot:
                             if isinstance(x, (float, int)) \
                             and not np.isnan(x)
                 ])
-            self.group_lst.reverse()
 
         # define colors based on plotly default colors or specified HEX codes;
         # print error messages if HEX codes are missing for specified groups
@@ -238,6 +239,10 @@ class Plot:
                 self.group_lst[idx]: def_col_lst[idx % len(def_col_lst)] \
                     for idx in range(len(self.group_lst))
             }
+
+        # reverse plotting order if specified
+        if self.reverse:
+            self.group_lst.reverse()
 
 
     def savefig(self):

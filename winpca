@@ -213,12 +213,13 @@ def main():
                     end=args_dct['end'],
                     metadata_path=args_dct['metadata_path'],
                     color_by=args_dct['color_by'],
-                    numeric=args_dct['numeric'],
                     hex_code_dct=args_dct['hex_code_dct'],
                     interval=args_dct['interval'],
                     chromplot_w=config.CHROMPLOT_W,
                     chromplot_h=config.CHROMPLOT_H,
                     plot_fmt_lst=args_dct['plot_fmt_lst'],
+                    numeric=args_dct['numeric'],
+                    reverse=args_dct['reverse'],
         )
         plot.chromplot()
         plot.savefig()
@@ -239,12 +240,13 @@ def main():
                     run_id_lst=args_dct['run_id_lst'],
                     metadata_path=args_dct['metadata_path'],
                     color_by=args_dct['color_by'],
-                    numeric=args_dct['numeric'],
                     hex_code_dct=args_dct['hex_code_dct'],
                     interval=args_dct['interval'],
                     genomeplot_w=config.GENOMEPLOT_W,
                     genomeplot_h=config.GENOMEPLOT_H,
                     plot_fmt_lst=args_dct['plot_fmt_lst'],
+                    numeric=args_dct['numeric'],
+                    reverse=args_dct['reverse'],
         )
         plot.genomeplot()
         plot.savefig()
