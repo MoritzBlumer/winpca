@@ -275,6 +275,10 @@ class CLI:
             '-g', '--groups', dest='color_by', required=False, metavar='\b',
             help='Metadata column for color-grouping. Requires -m/--metadata.')
         genomeplot_parser.add_argument(
+            '--n', '--numeric', dest='numeric', required=False, 
+            action='store_true', help='Set flag to apply a continuous color'
+            ' scale (requires numerical data).')
+        genomeplot_parser.add_argument(
             '-c', '--colors', dest='hex_codes', required=False, metavar='\b',
             help='HEX codes (drop "#") for color groups. Check documentation'
             ' for formatting instructions. Requires -g/--groups.')
