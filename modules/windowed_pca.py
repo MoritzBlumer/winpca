@@ -464,13 +464,11 @@ class WPCA:
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[2:]
             if self.file_fmt == 'BEAGLE':
-                print('BEAGLE', flush=True)
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
 
             # use var_file_sample_lst (drop duplicates) if no samples specified
             if self.sample_lst is None:
-                print('Copy variant_sample_lst', flush=True)
                 self.sample_lst = list(dict.fromkeys(var_file_sample_lst))
 
             # obtain index positions (returns first hit)
@@ -484,7 +482,6 @@ class WPCA:
 
                 # for GL, parse first two columns per sample, for PL all three
                 if self.var_fmt == 'GL':
-                    print('Copy 2 columns', flush=True)
                     sample_idx_lst = [[i, i+1] for i in sample_idx_lst]
                 if self.var_fmt == 'PL':
                     sample_idx_lst = [[i, i+1, i+2] for i in sample_idx_lst]

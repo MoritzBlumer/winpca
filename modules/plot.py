@@ -86,7 +86,7 @@ class Plot:
             self.plot_var_disp = 'PC 2'
         elif self.plot_var == 'hetp':
             self.plot_var_disp = 'SNP Heterozygosity'
-        
+
         # set color scale name (plotly) for continuous data
         self.color_scale = 'Plasma'
         # set allowed NA strings
