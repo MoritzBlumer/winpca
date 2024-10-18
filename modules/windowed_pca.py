@@ -464,11 +464,13 @@ class WPCA:
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[2:]
             if self.file_fmt == 'BEAGLE':
+                print('BEAGLE', flush=True)
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
 
             # use var_file_sample_lst (drop duplicates) if no samples specified
             if self.sample_lst is None:
+                print('Copy variant_sample_lst', flush=True)
                 self.sample_lst = list(dict.fromkeys(var_file_sample_lst))
 
             # obtain index positions (returns first hit)
@@ -482,6 +484,7 @@ class WPCA:
 
                 # for GL, parse first two columns per sample, for PL all three
                 if self.var_fmt == 'GL':
+                    print('Copy 2 columns', flush=True)
                     sample_idx_lst = [[i, i+1] for i in sample_idx_lst]
                 if self.var_fmt == 'PL':
                     sample_idx_lst = [[i, i+1, i+2] for i in sample_idx_lst]
@@ -567,12 +570,12 @@ class WPCA:
                         ]
                         # only keep biallellic GLs (i.e. AA, AB, BB)
                         gls = [x for gl in gls if len(gl) == 3 for x in gl]
-                        # delete 3rd field for each GL (expected by PCAngsd)
-                        gls = np.delete(gls, np.s_[2::3], axis=1)
                         # GATK encodes missing data as '.' --> drop lines
                         # where length of GLs != 3* n_samples
-                        gls = [] if (len(gls)) != len(sample_idx_lst)*3 else gls
+                        gls = [] if (len(gls)) != len(sample_idx_lst)* 3 else gls
                         if gls == []: continue
+                        # delete 3rd field for each GL (expected by PCAngsd)
+                        gls = np.delete(gls, np.s_[2::3], axis=1)
                         while self.w_stop < pos:
                             if self.win: self.pl_process_win()
                             if self.stop < self.w_stop: break
@@ -605,7 +608,7 @@ class WPCA:
                         q_chrom = line[0].rsplit('_', 1)[0]
                         if q_chrom != self.chrom: continue
                         pos = int(line[0].rsplit('_', 1)[1])
-                        gls = [line[2:][idx] for idx in sample_idx_lst]
+                        gls = [line[3:][idx] for idx in sample_idx_lst]
                         while self.w_stop < pos:
                             if self.win: self.gl_process_win()
                             if self.stop < self.w_stop: break
@@ -660,10 +663,6 @@ class WPCA:
                         if q_chrom != self.chrom: continue
                         pos = int(line[1])
                         pls = [line[2:][idx] for idx in sample_idx_lst]
-                        # GATK encodes missing PL data as '.' --> drop lines
-                        # where length of PLs != 3* n_samples
-                        pls = [] if (len(pls)) != len(sample_idx_lst) else pls
-                        if pls == []: continue
                         while self.w_stop < pos:
                             if self.win: self.pl_process_win()
                             if self.stop < self.w_stop: break
