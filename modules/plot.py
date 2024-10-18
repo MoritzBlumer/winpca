@@ -213,10 +213,9 @@ class Plot:
                 ] \
                 + sorted(
                 [
-                        float(x) for x in self.group_lst \
+                        x for x in self.group_lst \
                             if x not in self.na_lst
                 ])
-            self.group_lst = [str(x) for x in self.group_lst]
 
         # define colors based on plotly default colors or specified HEX codes;
         # print error messages if HEX codes are missing for specified groups
