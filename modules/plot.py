@@ -203,6 +203,19 @@ class Plot:
                     self.color_dct[val] = p_colors.sample_colorscale(
                         self.color_scale, [norm_val],
                     )[0]
+            # adjust plotting order smallest to largest
+            self.group_lst = \
+                [
+                    x for x in self.group_lst \
+                        if isinstance(x, (str)) \
+                        or x in [np.nan, None]
+                ] \
+                + sorted(
+                [
+                        x for x in self.group_lst \
+                            if isinstance(x, (float, int)) \
+                            and not np.isnan(x)
+                ])
 
         # define colors based on plotly default colors or specified HEX codes;
         # print error messages if HEX codes are missing for specified groups
