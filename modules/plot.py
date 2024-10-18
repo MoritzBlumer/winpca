@@ -209,14 +209,12 @@ class Plot:
             self.group_lst = \
                 [
                     x for x in self.group_lst \
-                        if isinstance(x, (str)) \
-                        or x in [np.nan, None]
+                        if self.na_lst
                 ] \
                 + sorted(
                 [
-                        x for x in self.group_lst \
-                            if isinstance(x, (float, int)) \
-                            and not np.isnan(x)
+                        float(x) for x in self.group_lst \
+                            if x not in self.na_lst
                 ])
 
         # define colors based on plotly default colors or specified HEX codes;
