@@ -576,7 +576,7 @@ class Plot:
                     mode='lines',
                     line=dict(color=self.color_dct[group]),
                     connectgaps=False,
-                    show_legend=show_legend,
+                    showlegend=show_legend,
                 ),
             )
 
