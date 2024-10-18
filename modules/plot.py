@@ -667,7 +667,7 @@ class Plot:
                 ),
                 showlegend=False,
             ),
-            row=2, col=1)
+            )
 
         # save image (using self.prefix to determine output prefix)
         if self.run_prefix.endswith('/'):
