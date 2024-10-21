@@ -309,46 +309,30 @@ class WPCA:
         # get window mid for X value
         pos = int(self.w_start + self.w_size/2-1)
 
+        # min_maf filter
+        if self.min_maf:
+            self.gt_min_maf_filter()
+
+        # count variants before dropping missing
+        n_var = self.w_gt_arr.shape[0]
+
+        # count missing sites per sample
+        n_miss_arr = np.isnan(self.w_gt_arr).sum(axis=0)
+
+        # calculate non-missing sites per sample
+        n_var_arr = n_var - n_miss_arr
+
+        # calculate % het sites relative to n_var
+        hetp_lst = list(np.sum(self.w_gt_arr == 1, axis=0)/n_var_arr)
+
         # mean impute
         if self.gt_mean_impute:
-
-            # min_maf filter
-            if self.min_maf:
-                self.gt_min_maf_filter()
-
-            # count variants
-            n_var = self.w_gt_arr.shape[0]
-
-            # count missing sites per sample
-            n_miss_arr = np.isnan(self.w_gt_arr).sum(axis=0)
-
-            # calculate non-missing sites per sample
-            n_var_arr = n_var - n_miss_arr
-
-            # calculate % het sites relative to n_var
-            hetp_lst = list(np.sum(self.w_gt_arr == 1, axis=0)/n_var_arr)
 
             # mean impute
             self.gt_mean_imputation()
 
-        # drop missing sites
+        # drop missing sites (& re-count)
         else:
-
-            # min_maf filter
-            if self.min_maf:
-                self.gt_min_maf_filter()
-
-            # count variants before dropping missing
-            n_var = self.w_gt_arr.shape[0]
-
-            # count missing sites per sample
-            n_miss_arr = np.isnan(self.w_gt_arr).sum(axis=0)
-
-            # calculate non-missing sites per sample
-            n_var_arr = n_var - n_miss_arr
-
-            # calculate % het sites relative to n_var
-            hetp_lst = list(np.sum(self.w_gt_arr == 1, axis=0)/n_var_arr)
 
             # drop missing sites
             self.gt_drop_missing_sites()
