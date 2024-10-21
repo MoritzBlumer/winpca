@@ -590,7 +590,7 @@ class Plot:
                     hoverinfo='text',
                     name=list(sample_df[self.group_id])[0],
                     legendgroup=list(sample_df[self.group_id])[0],
-                    mode='lines',
+                    mode='markers',
                     line=dict(color=self.color_dct[group]),
                     connectgaps=False,
                     showlegend=show_legend,
