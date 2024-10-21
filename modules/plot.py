@@ -610,9 +610,9 @@ class Plot:
             )
 
         # format lines
-        self.fig.update_traces(
-            line=dict(width=.7,),
-        )
+        # self.fig.update_traces(
+        #     line=dict(width=.7,),
+        # )
 
         # format x axis
         self.fig.update_xaxes(
