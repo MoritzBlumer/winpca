@@ -43,7 +43,8 @@ class WPCA:
                  sample_lst,
                  chrom, start, stop,
                  w_size, w_step,
-                 min_var_per_w,
+                 gt_min_var_per_w,
+                 gl_pl_min_var_per_w,
                  skip_monomorphic,
                  gt_mean_impute,
                  vcf_pass_filter,
@@ -63,7 +64,8 @@ class WPCA:
         # parameters (defaults from config)
         self.w_size = w_size
         self.w_step = w_step
-        self.min_var_per_w = min_var_per_w
+        self.gt_min_var_per_w = gt_min_var_per_w
+        self.gl_pl_min_var_per_w = gl_pl_min_var_per_w
         self.skip_monomorphic = skip_monomorphic
         self.gt_mean_impute = gt_mean_impute
         self.vcf_pass_filter = vcf_pass_filter
@@ -341,7 +343,7 @@ class WPCA:
             n_var = self.w_gt_arr.shape[0]
 
         # if # variants passes specified threshold
-        if n_var >= self.min_var_per_w:
+        if n_var >= self.gt_min_var_per_w:
             # pca
             pca = allel.pca(
                 self.w_gt_arr,
@@ -378,7 +380,7 @@ class WPCA:
             }
             log.info('Skipped window'
                      f' {self.w_start}-{self.w_start + self.w_size-1} with'
-                     f' {n_var} variants (theshold: {self.min_var_per_w}'
+                     f' {n_var} variants (theshold: {self.gt_min_var_per_w}'
                       ' variants)')
 
         # append output
@@ -398,7 +400,7 @@ class WPCA:
         n_var = self.w_gl_arr.shape[0]
 
         # if # variants passes specified threshold
-        if n_var >= self.min_var_per_w:
+        if n_var >= self.gl_pl_min_var_per_w:
 
             # compute covariance matrix with PCAngsd
             cov_arr, _, _, _, _ = emPCA(
@@ -445,7 +447,7 @@ class WPCA:
             }
             log.info('Skipped window'
                      f' {self.w_start}-{self.w_start + self.w_size-1} with'
-                     f' {n_var} variants (theshold: {self.min_var_per_w}'
+                     f' {n_var} variants (theshold: {self.gl_pl_min_var_per_w}'
                       ' variants)')
 
         # append output

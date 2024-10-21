@@ -450,7 +450,8 @@ class CLI:
 
         # add in settings from config
         self.args_dct['skip_monomorphic'] = config.SKIP_MONOMORPHIC
-        self.args_dct['min_var_per_w'] = config.MIN_VAR_PER_W
+        self.args_dct['gt_min_var_per_w'] = config.GT_MIN_VAR_PER_W
+        self.args_dct['gl_pl_min_var_per_w'] = config.GL_PL_MIN_VAR_PER_W
         self.args_dct['vcf_pass_filter'] = config.VCF_PASS_FILTER
         self.args_dct['n_prev_windows'] = config.N_PREV_WINDOWS
         self.args_dct['gt_mean_impute'] = config.GT_MEAN_IMPUTE
