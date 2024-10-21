@@ -590,8 +590,8 @@ class Plot:
                     hoverinfo='text',
                     name=list(sample_df[self.group_id])[0],
                     legendgroup=list(sample_df[self.group_id])[0],
-                    mode='markers',
-                    marker=dict(color=self.color_dct[group]),
+                    mode='lines',
+                    line=dict(color=self.color_dct[group]),
                     connectgaps=False,
                     showlegend=show_legend,
                 ),
@@ -610,9 +610,9 @@ class Plot:
             )
 
         # format lines
-        # self.fig.update_traces(
-        #     line=dict(width=.7,),
-        # )
+        self.fig.update_traces(
+            line=dict(width=.7,),
+        )
 
         # format x axis
         self.fig.update_xaxes(
