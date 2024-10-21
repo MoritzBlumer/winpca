@@ -175,23 +175,14 @@ class WPCA:
 
     def gt_process_win(self):
         '''
-        Remove POS info, convert to numpy array, apply min_maf filter,
-        drop rows/sites with missing call(s) OR mean impute, then apply
-        target function or return empty array if there are no variants.
+        Remove POS info, convert to numpy array and apply target function or
+        return empty array if there are no variants.
         '''
 
         # non-empty: trim off pos info, convert to numpy arr, drop missing
         # sites or mean impute, apply min_maf filter
         if self.win:
             self.w_gt_arr = np.array([x[1:] for x in self.win],dtype=np.float32)
-            if self.gt_mean_impute:
-                if self.min_maf:
-                    self.gt_min_maf_filter()
-                self.gt_mean_imputation()
-            else:
-                self.gt_drop_missing_sites()
-                if self.min_maf:
-                    self.gt_min_maf_filter()
 
         # empty: convert to empty numpy arr
         else:
@@ -308,20 +299,62 @@ class WPCA:
         sys.stdout = old_stdout
 
 
-    def pca(self):                                                              # skip_mono.. here?
+    def pca(self):
         '''
-        Conduct PCA, but if (n_var < min_var_per_w) generate empty/dummy
+        Apply min_maf filter, drop rows/sites with missing call(s) OR mean
+        impute, conduct PCA, but if (n_var < min_var_per_w) generate empty/dummy
         output instead.
         '''
 
         # get window mid for X value
         pos = int(self.w_start + self.w_size/2-1)
 
-        # count variants
-        n_var = self.w_gt_arr.shape[0]
+        # mean impute
+        if self.gt_mean_impute:
 
-        # count missing sites per sample
-        n_miss_lst = list(np.sum(self.w_gt_arr == -1, axis=0))
+            # min_maf filter
+            if self.min_maf:
+                self.gt_min_maf_filter()
+
+            # count variants
+            n_var = self.w_gt_arr.shape[0]
+
+            # count missing sites per sample
+            n_miss_arr = np.isnan(self.w_gt_arr).sum(axis=0)
+
+            # calculate non-missing sites per sample
+            n_var_arr = n_var - n_miss_arr
+
+            # calculate % het sites relative to n_var
+            hetp_lst = list(np.sum(self.w_gt_arr == 1, axis=0)/n_var_arr)
+
+            # mean impute
+            self.gt_mean_imputation()
+
+        # drop missing sites
+        else:
+
+            # min_maf filter
+            if self.min_maf:
+                self.gt_min_maf_filter()
+
+            # count variants before dropping missing
+            n_var = self.w_gt_arr.shape[0]
+
+            # count missing sites per sample
+            n_miss_arr = np.isnan(self.w_gt_arr).sum(axis=0)
+
+            # calculate non-missing sites per sample
+            n_var_arr = n_var - n_miss_arr
+
+            # calculate % het sites relative to n_var
+            hetp_lst = list(np.sum(self.w_gt_arr == 1, axis=0)/n_var_arr)
+
+            # drop missing sites
+            self.gt_drop_missing_sites()
+
+            # re-count count remaining variants
+            n_var = self.w_gt_arr.shape[0]
 
         # if # variants passes specified threshold
         if n_var >= self.min_var_per_w:
@@ -334,9 +367,6 @@ class WPCA:
                 ploidy=2,
             )
 
-            # calculate % het sites relative to n_var
-            hetp_lst = list(np.sum(self.w_gt_arr == 1, axis=0)/n_var)
-
             # compile to output
             out = {
                 'pos': pos,
@@ -345,7 +375,7 @@ class WPCA:
                 'pc_1_ve': round(pca[1].explained_variance_ratio_[0]*100, 2),
                 'pc_2_ve': round(pca[1].explained_variance_ratio_[1]*100, 2),
                 'hetp': hetp_lst,
-                'n_miss': n_miss_lst,
+                'n_miss': n_miss_arr,
                 'n_var': n_var
             }
 
