@@ -313,7 +313,7 @@ class WPCA:
         if self.min_maf:
             self.gt_min_maf_filter()
 
-        # count variants before dropping missing
+        # count variants
         n_var = self.w_gt_arr.shape[0]
 
         # count missing sites per sample
