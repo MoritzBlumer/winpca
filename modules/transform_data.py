@@ -227,7 +227,6 @@ class Flip:
                 w_flip_lst.append(record)
 
         # convert to int
-        print(w_flip_lst)
         w_flip_lst = [int(x) for x in w_flip_lst]
 
         # check if all windows are in the index, else print error
