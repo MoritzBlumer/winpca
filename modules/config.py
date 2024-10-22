@@ -31,8 +31,7 @@ PLOT_INTERVAL = None       # plot only every nth value (10th if specifying 10)
 #  (these can only be changed here, i.e. no CLI arguments)
 
 # pca
-MIN_VAR_PER_W = 20        # min # of variants per window, otherwise empty output
-GT_MIN_VAR_PER_W = 25     # min # of variants per window, otherwise empty output
+GT_MIN_VAR_PER_W = 20     # min # of variants per window, otherwise empty output
 GL_PL_MIN_VAR_PER_W = 100 # min # of variants per window, otherwise empty output
 SKIP_MONOMORPHIC = True   # skip invariant sites
 VCF_PASS_FILTER = True    # include only sites where FILTER is set to PASS
