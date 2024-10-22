@@ -211,6 +211,13 @@ class Flip:
         w_flip_lst = []
         for record in coord_lst:
 
+            # strip accidental white spaces
+            record = record.strip()
+
+            # ignore accidental empty lines
+            if record == '':
+                continue
+
             # expand regions
             if '-' in record:
                 start = int(record.split('-')[0])
