@@ -443,7 +443,7 @@ class Plot:
             side='left', mirror=True,
             ticks='outside', tickfont=dict(size=10),
             title_font=dict(size=12),
-            title=dict(text=self.plot_var_disp, standoff=0),
+            title=dict(text='<b>' + self.plot_var_disp, standoff=0),
         )
 
         # plot colorscale instead of per-sample legend for numeric metadata
@@ -633,7 +633,7 @@ class Plot:
             side='left', mirror=True,
             ticks='outside', tickfont=dict(size=10),
             title_font=dict(size=12),
-            title=dict(text=self.plot_var_disp, standoff=0),
+            title=dict(text='<b>' + self.plot_var_disp, standoff=0),
         )
 
         # add vertical lines to separate chromosomes
