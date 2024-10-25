@@ -406,7 +406,7 @@ class WPCA:
             cov_arr, _, _, _, _ = emPCA(
                 self.w_gl_arr,
                 self.gl_min_maf_arr,
-                0, 100, 1e-5,
+                0, 1, 1e-5,                                                   ### REVERT TO 100
                 self.n_threads
             )
 
