@@ -381,7 +381,7 @@ class Plot:
                     y=y_val_lst,
                     text=hover_str_lst,
                     hoverinfo='text',
-                    hoverlabel=dict(font_size=8)
+                    hoverlabel=dict(font_size=8),
                     name=list(sample_df[self.group_id])[0],
                     legendgroup=list(sample_df[self.group_id])[0],
                     mode='lines',
