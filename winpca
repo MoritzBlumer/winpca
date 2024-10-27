@@ -209,7 +209,7 @@ def main():
                     stat_var=stat_var,
                     prefix=args_dct['prefix'],
                     data=data,
-                    chrom=args_dct['start'],
+                    chrom=args_dct['chrom'],
                     start=args_dct['start'],
                     end=args_dct['end'],
                     metadata_path=args_dct['metadata_path'],
