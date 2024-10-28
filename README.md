@@ -36,14 +36,14 @@ _Minimal command line to visualize PC 1 along a chromosome (using GT data from a
 ![example_pca_plot](assets/example.png)
 ```
 # windowed PCA with default settings
-winpca pca -n test -v $vcf -r chr1:1-1000000
+winpca pca VCF_PATH CHROM_NAME:1-CHROM_SIZE PREFIX
 
 # make a plot of principal component 1 and color by inversion state
-winpca chromplot -n test -c 1 -m $metadata -g inversion_state -r chr1:1-1000000
+winpca chromplot PREFIX CHROM_NAME:1-CHROM_SIZE -m METADATA_PATH -g METADATA_COLUMN_NAME
 ```
 
 
-_Please refer to the help messages (winpca {method} -h) or to the [wiki](https://github.com/MoritzBlumer/winpca/wiki) for the full documentation, file format specifications, more use cases and a tutorial._
+_Please refer to the help messages (winpca {method} -h) or to the [wiki](https://github.com/MoritzBlumer/winpca/wiki) for the full documentation, file format specifications, more use cases and a tutorial to produce the above plot._
 
 <br />
 
