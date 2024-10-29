@@ -5,6 +5,8 @@ A package for windowed PCA analysis.
 WinPCA performs principal component analyses (PCA) in sliding windows along chromosomes. Both hard-called genotypes (input: VCF or TSV) or genotype likelihoods (input: VCF, TSV or BEAGLE) are accepted. WinPCA uses [scikit-allel](https://scikit-allel.readthedocs.io/en/stable/stats/decomposition.html?highlight=pca) to perfom PCAs on genotype data and [PCAngsd](https://github.com/Rosemeis/pcangsd) methods for genotype likelihood (GL, PL) data.
 
 WinPCA can aid the initial exploration of new datasets since no prior grouping of input samples is necessary to visualize genetic structure. It has also been used to [identify chromosome-scale inversions in cichlids and to visualize the recombination landscape in a species cross](https://www.biorxiv.org/content/10.1101/2024.07.28.605452v1.full) (Fig. 2) or to [identify ancestry tracts in a hybrid mouse](https://www.biorxiv.org/content/10.1101/2024.07.28.605452v1.full) (Fig. 6).
+
+![example_pca_plot](assets/example.png)
 <br />
 <br />
 
@@ -32,8 +34,6 @@ chmod +x winpca/winpca                                # make excutable
 _Minimal command line to visualize PC 1 along a chromosome (using GT data from a VCF)_:
 <br />
 
-
-![example_pca_plot](assets/example.png)
 ```
 # windowed PCA with default settings
 winpca pca VCF_PATH CHROM_NAME:1-CHROM_SIZE PREFIX
