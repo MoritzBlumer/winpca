@@ -92,7 +92,13 @@ class Plot:
         thresholds = [0, 0.25, 0.5, 0.75, 1]
         colorscale = [[threshold, color] for threshold, color in zip(thresholds, colors)]
 
-        # set colo
+        # Convert named colors to RGB tuples
+        rgb_colors = [p_colors.unlabel_rgb(p_colors.get_named_color_rgb(color)) for color in colors]
+        
+        # Create the colorscale
+        color_scale = [[threshold, rgb] for threshold, rgb in zip(thresholds, rgb_colors)]
+                     
+        # set color scheme
         self.color_scale = colorscale # or set inbuilt schemes like 'Plasma'
 
         # set allowed NA strings
