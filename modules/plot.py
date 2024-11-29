@@ -89,15 +89,12 @@ class Plot:
             self.plot_var_disp = 'SNP Heterozygosity'
 
         # define custom color scale
-        colors = ['blue', 'blue', 'purple', 'red', 'yellow']
+        # colors = ['blue', 'blue', 'purple', 'red', 'yellow']
+        colors = ['#000080', '#0000FF', '#800080', '#FF0000', '#FFFF00']
         thresholds = [0, 0.25, 0.5, 0.75, 1]
-        colorscale = [[threshold, color] for threshold, color in zip(thresholds, colors)]
 
-        # Convert named colors to RGB tuples
-        rgb_colors = [p_colors.unlabel_rgb(p_colors.get_named_color_rgb(color)) for color in colors]
-        
-        # Create the colorscale
-        color_scale = [[threshold, rgb] for threshold, rgb in zip(thresholds, rgb_colors)]
+        # create the colorscale
+        colorscale = [[threshold, color] for threshold, color in zip(thresholds, colors)]
                      
         # set color scheme
         self.color_scale = colorscale # or set inbuilt schemes like 'Plasma'
