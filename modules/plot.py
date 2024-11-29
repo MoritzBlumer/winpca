@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+import plotly.colors as p_colors
 
 # MODULES
 from modules.log import Log
