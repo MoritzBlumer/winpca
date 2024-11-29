@@ -87,8 +87,14 @@ class Plot:
         elif self.plot_var == 'hetp':
             self.plot_var_disp = 'SNP Heterozygosity'
 
-        # set color scale name (plotly) for continuous data
-        self.color_scale = 'Plasma'
+        # define custom color scale
+        colors = ['blue', 'blue', 'purple', 'red', 'yellow']
+        thresholds = [0, 0.25, 0.5, 0.75, 1]
+        colorscale = [[threshold, color] for threshold, color in zip(thresholds, colors)]
+
+        # set colo
+        self.color_scale = colorscale # or set inbuilt schemes like 'Plasma'
+
         # set allowed NA strings
         self.na_lst = [None, 'NA', 'na', 'NaN']
 
