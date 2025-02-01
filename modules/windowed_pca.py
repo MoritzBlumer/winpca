@@ -201,7 +201,13 @@ class WPCA:
         '''
 
         # PCAngsd
-        self.gl_min_maf_arr = emMAF(self.w_gl_arr, 200, 1e-4, self.n_threads)
+        # emMAF expects different numbers of args depending on the version
+        try:
+            self.gl_min_maf_arr = emMAF(self.w_gl_arr, 200, 1e-4)
+        except:
+            self.gl_min_maf_arr = emMAF(self.w_gl_arr, 200, 1e-4, self.n_threads)
+            log.info('PCAngsd version is outdated, updating to the latest '
+                     'version is recommended')
 
         # filter by minor allel frequency
         if self.min_maf > 0.0:
@@ -403,12 +409,20 @@ class WPCA:
         if n_var >= self.gl_pl_min_var_per_w:
 
             # compute covariance matrix with PCAngsd
-            cov_arr, _, _, _, _ = emPCA(
-                self.w_gl_arr,
-                self.gl_min_maf_arr,
-                0, 100, 1e-5,
-                self.n_threads
-            )
+            # emPCA expects different numbers of args depending on the version
+            try:
+                cov_arr, _, _, _, _ = emPCA(
+                    self.w_gl_arr,
+                    self.gl_min_maf_arr,
+                    0, 100, 1e-5,
+                )
+            except:
+                cov_arr, _, _, _, _ = emPCA(
+                    self.w_gl_arr,
+                    self.gl_min_maf_arr,
+                    0, 100, 1e-5,
+                    self.n_threads
+                )
 
             # eigendecomposition
             eigenval_arr, eigenvec_arr = np.linalg.eigh(cov_arr)
