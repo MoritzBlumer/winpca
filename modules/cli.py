@@ -75,8 +75,8 @@ class CLI:
 
     def pca(self):
         '''
-        Windowed PCA using scikit-allel when working with callled genotypes(GT)'
-        ' and PCAngsd when working with genotype likelihoods (GL/PL)
+        Windowed PCA using scikit-allel when working with called genotypes(GT)
+        and PCAngsd when working with genotype likelihoods (GL/PL)
         '''
 
         # add subparser
@@ -403,7 +403,7 @@ class CLI:
                 suffix = '.' + '.'.join(path.split('.')[-1:])
             if suffix.lower() not in self.variant_file_suffixes:
                 log.error_nl(
-                    f'VARIANT_FILE: {self.args['variant_file_path']} has an'
+                    f'VARIANT_FILE: {self.args["variant_file_path"]} has an'
                     f' unexpected suffix ({suffix} is not a supported file'
                     f' format or compression)'
                 )
