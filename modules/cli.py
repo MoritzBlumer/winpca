@@ -138,7 +138,7 @@ class CLI:
             '-t', '--threads', dest='n_threads', metavar='\b',
             required=False, type=int, default=int(config.N_THREADS),
             help=f'{self.tab}number of threads (multi-threading is only'
-              ' available with PCAngsd, i.e. GL/PL) [{config.N_THREADS}]')
+             f' available with PCAngsd, i.e. GL/PL) [{config.N_THREADS}]')
         pca_parser.add_argument(
             '--np', dest='no_pass_filter',
             required=False, action='store_true', default=False,
