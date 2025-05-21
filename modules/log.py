@@ -18,7 +18,7 @@ class Log():
         Print ERROR message to STDERR and exit.
         '''
 
-        print('\n',
+        print('',
               file=sys.stderr,
               flush=True,
               )
@@ -29,7 +29,7 @@ class Log():
         Print INFO message to STDERR.
         '''
 
-        print(f'[INFO] {message}.',
+        print(f'[INFO] {message}',
               file=sys.stderr,
               flush=True,
               )
@@ -40,7 +40,18 @@ class Log():
         Print ERROR message to STDERR and exit.
         '''
 
-        print(f'[ERROR] {message}.',
+        print(f'[ERROR] {message}\n',
+              file=sys.stderr,
+              flush=True,
+              )
+        sys.exit(1)
+
+    def error_nl(self, message):
+        '''
+        Print ERROR message to STDERR and exit.
+        '''
+
+        print(f'\n[ERROR] {message}\n',
               file=sys.stderr,
               flush=True,
               )

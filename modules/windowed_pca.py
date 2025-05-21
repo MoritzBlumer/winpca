@@ -41,6 +41,7 @@ class WPCA:
                  file_fmt,
                  var_fmt,
                  sample_lst,
+                 n_pcs, pc_a, pc_b,
                  chrom, start, stop,
                  w_size, w_step,
                  gt_min_var_per_w,
@@ -57,6 +58,9 @@ class WPCA:
         self.file_fmt = file_fmt
         self.var_fmt = var_fmt
         self.sample_lst = sample_lst
+        self.n_pcs = int(n_pcs)
+        self.pc_a = int(pc_a)
+        self.pc_b = int(pc_b)
         self.chrom = chrom
         self.start = start
         self.stop = stop
@@ -353,7 +357,7 @@ class WPCA:
             # pca
             pca = allel.pca(
                 self.w_gt_arr,
-                n_components=2,
+                n_components=self.n_pcs,
                 copy=True,
                 scaler='patterson',
                 ploidy=2,
@@ -362,10 +366,14 @@ class WPCA:
             # compile to output
             out = {
                 'pos': pos,
-                'pc_1': pca[0][:, 0],
-                'pc_2': pca[0][:, 1],
-                'pc_1_ve': round(pca[1].explained_variance_ratio_[0]*100, 2),
-                'pc_2_ve': round(pca[1].explained_variance_ratio_[1]*100, 2),
+                'pc_a': pca[0][:, self.pc_a-1],
+                'pc_b': pca[0][:, self.pc_b-1],
+                f'pc_{self.pc_a}_ve': round(
+                    pca[1].explained_variance_ratio_[self.pc_a-1]*100, 2
+                ),
+                f'pc_{self.pc_b}_ve': round(
+                    pca[1].explained_variance_ratio_[self.pc_b-1]*100, 2
+                ),
                 'hetp': hetp_lst,
                 'n_miss': n_miss_arr,
                 'n_var': n_var
@@ -376,10 +384,10 @@ class WPCA:
             empty_lst = [None] * self.w_gt_arr.shape[1]
             out = {
                 'pos': pos,
-                'pc_1': empty_lst,
-                'pc_2': empty_lst,
-                'pc_1_ve': None,
-                'pc_2_ve': None,
+                'pc_a': empty_lst,
+                'pc_b': empty_lst,
+                f'pc_{self.pc_a}_ve': None,
+                f'pc_{self.pc_b}_ve': None,
                 'hetp': empty_lst,
                 'n_miss': empty_lst,
                 'n_var': n_var
@@ -414,13 +422,13 @@ class WPCA:
                 cov_arr, _, _, _, _ = emPCA(
                     self.w_gl_arr,
                     self.gl_min_maf_arr,
-                    0, 100, 1e-5,
+                    self.n_pcs, 100, 1e-5,
                 )
             except:
                 cov_arr, _, _, _, _ = emPCA(
                     self.w_gl_arr,
                     self.gl_min_maf_arr,
-                    0, 100, 1e-5,
+                    self.n_pcs, 100, 1e-5,
                     self.n_threads
                 )
 
@@ -437,10 +445,10 @@ class WPCA:
 
             out = {
                 'pos': pos,
-                'pc_1': eigenvec_arr[:, 0],
-                'pc_2': eigenvec_arr[:, 1],
-                'pc_1_ve': round(pct_exp_arr[0], 2),
-                'pc_2_ve': round(pct_exp_arr[1], 2),
+                'pc_a': eigenvec_arr[:, self.pc_a-1],
+                'pc_b': eigenvec_arr[:, self.pc_b-1],
+                f'pc_{self.pc_a}_ve': round(pct_exp_arr[self.pc_a-1], 2),
+                f'pc_{self.pc_b}_ve': round(pct_exp_arr[self.pc_b-1], 2),
                 'hetp': [None for x in eigenvec_arr[:, 0]],
                 'n_miss': [None for x in eigenvec_arr[:, 0]],
                 'n_var': n_var,
@@ -451,10 +459,10 @@ class WPCA:
             empty_lst = [None] * (self.w_gl_arr.shape[1]//2)
             out = {
                 'pos': pos,
-                'pc_1': empty_lst,
-                'pc_2': empty_lst,
-                'pc_1_ve': None,
-                'pc_2_ve': None,
+                'pc_a': empty_lst,
+                'pc_b': empty_lst,
+                f'pc_{self.pc_a}_ve': None,
+                f'pc_{self.pc_b}_ve': None,
                 'hetp': empty_lst,
                 'n_miss': empty_lst,
                 'n_var': n_var,
@@ -517,9 +525,6 @@ class WPCA:
                     sample_idx_lst = [[i, i+1, i+2] for i in sample_idx_lst]
                 sample_idx_lst = [x for i in sample_idx_lst for x in i]
 
-                # # remove duplicates from var_file_sample_lst (preserve order) ## DELETE
-                # var_file_sample_lst = list(dict.fromkeys(var_file_sample_lst))## DELETE
-
         # initiate first window
         self.w_start = self.start
         self.w_stop = self.w_start + self.w_size-1
@@ -533,6 +538,19 @@ class WPCA:
             if self.var_fmt == 'GT':
 
                 if self.file_fmt == 'VCF':
+
+                    # read first 5000 lines to check if multiallellic
+                    with read_func(self.variant_file_path, 'rt') as check_gts:
+                        rows = [next(check_gts) for _ in range(5000)]
+                        rows = [x for x in rows if not x.startswith('#')]
+                        alt = [x.split('\t')[4] for x in rows]
+                        #print(alt)
+                        if any([len(x.split(',')) > 1 for x in alt]):
+                            log.error_nl(
+                                f'VARIANT_FILE: {self.variant_file_path}'
+                                 ' contains sites with more than 2 alleles'
+                            )
+
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
@@ -699,6 +717,12 @@ class WPCA:
                             self.pl_process_win()
                             if self.stop < self.w_stop: break
                             self.init_win()
+
+        # check if any windows were processed
+        if len(self.out_dct) == 0:
+            log.error('No windows found. Please check if chromosome name was' \
+            ' specified correctly')
+            log.newline()
 
         # print exit message
         log.newline()

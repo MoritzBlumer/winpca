@@ -34,10 +34,10 @@ def main():
     cli.chromplot()
     cli.genomeplot()
     cli.parse_args()
-    args_dct = cli.args_dct
+    args = cli.args
 
     # set mode
-    mode = args_dct['winpca']
+    mode = args['winpca']
 
 
     ## MODE: WINDOWED PCA
@@ -50,39 +50,47 @@ def main():
         log.newline()
 
         # determine file format
-        if args_dct['variant_file_path'].endswith('.gz'):
-            file_fmt = args_dct['variant_file_path'].split('.')[-2].upper()
+        if args['variant_file_path'].endswith('.gz'):
+            file_fmt = args['variant_file_path'].split('.')[-2].upper()
         else:
-            file_fmt = args_dct['variant_file_path'].split('.')[-1].upper()
+            file_fmt = args['variant_file_path'].split('.')[-1].upper()
 
         # update n_threads/var_fmt in CONFIG
-        config.N_THREADS = args_dct['n_threads']
-        config.VAR_FMT = args_dct['var_fmt']
+        config.N_THREADS = args['n_threads']                                # WHY IS THIS NECESSARY
+        config.VAR_FMT = args['var_fmt']                                    # WHY IS THIS NECESSARY
 
         # load module & instantiate
         from modules.windowed_pca import WPCA
         wpca = WPCA(
-            variant_file_path = args_dct['variant_file_path'],
+            variant_file_path = args['variant_file_path'],
             file_fmt=file_fmt,
-            var_fmt=args_dct['var_fmt'],
-            sample_lst=args_dct['sample_lst'],
-            chrom=args_dct['chrom'],
-            start=args_dct['start'],
-            stop=args_dct['end'],
-            w_size=args_dct['w_size'],
-            w_step=args_dct['w_step'],
-            gt_min_var_per_w=args_dct['gt_min_var_per_w'],
-            gl_pl_min_var_per_w=args_dct['gl_pl_min_var_per_w'],
-            skip_monomorphic=args_dct['skip_monomorphic'],
-            gt_mean_impute=args_dct['gt_mean_impute'],
-            vcf_pass_filter=args_dct['vcf_pass_filter'],
-            min_maf=args_dct['min_maf'],
-            n_threads=args_dct['n_threads'],
+            var_fmt=args['var_fmt'],
+            sample_lst=args['sample_lst'],
+            n_pcs = args['n_pcs'],
+            pc_a = args['pc_a'],
+            pc_b = args['pc_b'],
+            chrom=args['chrom'],
+            start=args['start'],
+            stop=args['end'],
+            w_size=args['w_size'],
+            w_step=args['w_step'],
+            gt_min_var_per_w=args['gt_min_var_per_w'],
+            gl_pl_min_var_per_w=args['gl_pl_min_var_per_w'],
+            skip_monomorphic=args['skip_monomorphic'],
+            gt_mean_impute=args['gt_mean_impute'],
+            vcf_pass_filter=args['vcf_pass_filter'],
+            min_maf=args['min_maf'],
+            n_threads=args['n_threads'],
             )
 
         # run, parse and write output
         wpca.window_parser()
-        data = WPCAData(args_dct['prefix'], wpca)
+        data = WPCAData(
+            args['prefix'],
+            args['pc_a'],
+            args['pc_b'],
+            wpca,
+        )
 
 
     ## ELSE READ IN EXISTING DATA:
@@ -90,13 +98,17 @@ def main():
     if mode in ['polarize', 'flip', 'chromplot']:
 
         # read data
-        data = WPCAData(args_dct['prefix'])
+        data = WPCAData(
+            args['prefix'],
+            args['pc_a'],
+            args['pc_b'],
+        )
 
 
     ## MODE: POLARIZE
 
     if mode in ['pca', 'polarize'] \
-        and not args_dct['polarize'] == 'skip':
+        and not args['polarize'] == 'skip':
 
         # print info
         log.newline()
@@ -107,33 +119,47 @@ def main():
         polarize = Polarize()
 
         # adaptive
-        if args_dct['polarize'] == 'auto':
-            if args_dct['pol_pc'] == 'both':
+        if args['polarize'] == 'auto':
+            if args['pol_pc'] == 'both':
                 data.modify_data(
-                    'pc_1', polarize.adaptive, args_dct['n_prev_windows']
+                    'pc_a_df', polarize.adaptive, args['n_prev_windows']
                 )
                 data.modify_data(
-                    'pc_2', polarize.adaptive, args_dct['n_prev_windows']
+                    'pc_b_df', polarize.adaptive, args['n_prev_windows']
                 )
             else:
+                pol_pc = 'a' if args['pol_pc'] == args['pc_a'] else 'b'
                 data.modify_data(
-                    'pc_' + str(args_dct['pol_pc']), polarize.adaptive, \
-                        args_dct['n_prev_windows']
+                    f'pc_{pol_pc}_df', polarize.adaptive, \
+                        args['n_prev_windows']
                 )
 
         # using guide samples
-        if args_dct['polarize'] == 'guide_samples':
-            if args_dct['pol_pc'] == 'both':
+        if args['polarize'] == 'guide_samples':
+
+            # check if guide samples exist
+            if not set(args['guide_sample_lst']).issubset(data.pc_a_df.columns):
+                missing_lst = \
+                    set(args['guide_sample_lst']) - set(data.pc_a_df.columns)
+                data.to_files()
+                log.error_nl(
+                    f'-g/--guide_samples: {", ".join(missing_lst)} not found,'
+                     ' writing unpolarized output instead'
+                )
+
+
+            if args['pol_pc'] == 'both':
                 data.modify_data(
-                    'pc_1', polarize.guide_samples, args_dct['guide_sample_lst']
+                    'pc_a_df', polarize.guide_samples, args['guide_sample_lst']
                 )
                 data.modify_data(
-                    'pc_2', polarize.guide_samples, args_dct['guide_sample_lst']
+                    'pc_b_df', polarize.guide_samples, args['guide_sample_lst']
                 )
             else:
+                pol_pc = 'a' if args['pol_pc'] == args['pc_a'] else 'b'
                 data.modify_data(
-                    'pc_' + str(args_dct['pol_pc']), polarize.guide_samples, \
-                        args_dct['guide_sample_lst']
+                    f'pc_{pol_pc}_df', polarize.guide_samples, \
+                        args['guide_sample_lst']
                 )
 
 
@@ -150,33 +176,34 @@ def main():
         flip = Flip()
 
         # reflect (entire)
-        if args_dct['reflect']:
-            if args_dct['flip_pc'] == 'both':
+        if args['reflect']:
+            if args['flip_pc'] == 'both':
                 data.modify_data(
-                    'pc_1', flip.flip_chrom
+                    'pc_a_df', flip.flip_chrom
                 )
                 data.modify_data(
-                    'pc_2', flip.flip_chrom
+                    'pc_a_df', flip.flip_chrom
                 )
             else:
+                flip_pc = 'a' if args['flip_pc'] == args['flip_pc'] else 'b'
                 data.modify_data(
-                    'pc_' + str(args_dct['flip_pc']), flip.flip_chrom
+                    f'pc_{flip_pc}_df', flip.flip_chrom                         # ISSUE  – FIXED?
                 )
+
         # flip specified windows
-        if args_dct['flip_windows']:
-            if args_dct['flip_pc'] == 'both':
+        if args['flip_windows']:
+            if args['flip_pc'] == 'both':
                 data.modify_data(
-                    'pc_1', flip.flip_windows,
-                    args_dct['flip_window_lst']
+                    'pc_a_df', flip.flip_windows, args['flip_window_lst']
                 )
                 data.modify_data(
-                    'pc_2', flip.flip_windows,
-                    args_dct['flip_window_lst']
+                    'pc_a_df', flip.flip_windows, args['flip_window_lst']
                 )
             else:
+                flip_pc = 'a' if args['flip_pc'] == args['flip_pc'] else 'b'
                 data.modify_data(
-                    'pc_' + str(args_dct['flip_pc']), flip.flip_windows,
-                    args_dct['flip_window_lst']
+                    f'pc_{flip_pc}_df', flip.flip_windows,                      # ISSUE  – FIXED?
+                    args['flip_window_lst']
                 )
 
 
@@ -196,31 +223,31 @@ def main():
         log.info('Creating chromosome plot')
 
         # infer stat_var
-        if args_dct['plot_var'] == 'pc_1':
-            stat_var = f'{args_dct["plot_var"]}_ve'
-        if args_dct['plot_var'] == 'pc_2':
-            stat_var = f'{args_dct["plot_var"]}_ve'
-        if args_dct['plot_var'] == 'hetp':
+        if args['plot_var'] == 'hetp':                                      # ADD miss?
             stat_var = 'n_var'
+        else:
+            stat_var = f'pc_{args['plot_var']}_ve'
 
         # load module & instantiate
         from modules.plot import Plot
-        plot = Plot(args_dct['plot_var'],
+        plot = Plot(args['plot_var'],
                     stat_var=stat_var,
-                    prefix=args_dct['prefix'],
+                    prefix=args['prefix'],
                     data=data,
-                    chrom=args_dct['chrom'],
-                    start=args_dct['start'],
-                    end=args_dct['end'],
-                    metadata_path=args_dct['metadata_path'],
-                    color_by=args_dct['color_by'],
-                    hex_code_dct=args_dct['hex_code_dct'],
-                    interval=args_dct['interval'],
-                    chromplot_w=config.CHROMPLOT_W,
-                    chromplot_h=config.CHROMPLOT_H,
-                    plot_fmt_lst=args_dct['plot_fmt_lst'],
-                    numeric=args_dct['numeric'],
-                    reverse=args_dct['reverse'],
+                    pc_a = args['pc_a'],
+                    pc_b = args['pc_b'],
+                    chrom=args['chrom'],
+                    start=args['start'],
+                    end=args['end'],
+                    metadata_path=args['metadata_path'],
+                    color_by=args['color_by'],
+                    hex_code_dct=args['hex_code_dct'],
+                    interval=args['interval'],
+                    chromplot_w=args['chromplot_w'],
+                    chromplot_h=args['chromplot_h'],
+                    plot_fmt_lst=args['plot_fmt_lst'],
+                    numeric=args['numeric'],
+                    reverse=args['reverse'],
         )
         plot.chromplot()
         plot.savefig()
@@ -236,18 +263,20 @@ def main():
 
         # load module & instantiate
         from modules.plot import Plot
-        plot = Plot(args_dct['plot_var'],
-                    run_prefix=args_dct['run_prefix'],
-                    run_id_lst=args_dct['run_id_lst'],
-                    metadata_path=args_dct['metadata_path'],
-                    color_by=args_dct['color_by'],
-                    hex_code_dct=args_dct['hex_code_dct'],
-                    interval=args_dct['interval'],
-                    genomeplot_w=config.GENOMEPLOT_W,
-                    genomeplot_h=config.GENOMEPLOT_H,
-                    plot_fmt_lst=args_dct['plot_fmt_lst'],
-                    numeric=args_dct['numeric'],
-                    reverse=args_dct['reverse'],
+        plot = Plot(args['plot_var'],
+                    pc_a = args['pc_a'],
+                    pc_b = args['pc_b'],
+                    run_prefix=args['run_prefix'],
+                    run_id_lst=args['run_id_lst'],
+                    metadata_path=args['metadata_path'],
+                    color_by=args['color_by'],
+                    hex_code_dct=args['hex_code_dct'],
+                    interval=args['interval'],
+                    genomeplot_w=args['genomeplot_w'],
+                    genomeplot_h=args['genomeplot_h'],
+                    plot_fmt_lst=args['plot_fmt_lst'],
+                    numeric=args['numeric'],
+                    reverse=args['reverse'],
         )
         plot.genomeplot()
         plot.savefig()

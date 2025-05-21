@@ -22,23 +22,25 @@ class WPCAData:
     can be modified through indluded modifier methods.
     '''
 
-    def __init__(self, prefix, w_pca_obj=None):
+    def __init__(self, prefix, pc_a, pc_b, w_pca_obj=None):
 
         # input variables
         self.prefix = prefix
         self.w_pca_obj = w_pca_obj
+        self.pc_a = pc_a
+        self.pc_b = pc_b
 
         # instance variables
-        self.pc_1 = None
-        self.pc_2 = None
-        self.hetp = None
-        self.miss = None
-        self.stat = None
+        self.pc_a_df = None
+        self.pc_b_df = None
+        self.hetp_df = None
+        self.miss_df = None
+        self.stat_df = None
 
         # set file suffixes
         self.suffix_dct = {
-            'pc_1': 'pc_1.tsv.gz',
-            'pc_2': 'pc_2.tsv.gz',
+            'pc_a': f'pc_{self.pc_a}.tsv.gz',
+            'pc_b': f'pc_{self.pc_b}.tsv.gz',
             'hetp': 'hetp.tsv.gz',
             'miss': 'miss.tsv.gz',
             'stat': 'stat.tsv.gz',
@@ -61,39 +63,42 @@ class WPCAData:
         # convert to df
         out_df = pd.DataFrame.from_dict(self.w_pca_obj.out_dct, orient='index')
 
-        # pc_1
-        self.pc_1 = pd.DataFrame(
-            data=out_df['pc_1'].to_list(),
+        # pc_a
+        self.pc_a_df = pd.DataFrame(
+            data=out_df['pc_a'].to_list(),
             index=out_df['pos'],
             columns=self.w_pca_obj.sample_lst,
         )
 
-        # pc_2
-        self.pc_2 = pd.DataFrame(
-            data=out_df['pc_2'].to_list(),
+        # pc_b
+        self.pc_b_df = pd.DataFrame(
+            data=out_df['pc_b'].to_list(),
             index=out_df['pos'],
             columns=self.w_pca_obj.sample_lst,
         )
 
         # hetp
-        self.hetp = pd.DataFrame(
+        self.hetp_df = pd.DataFrame(
             data=out_df['hetp'].to_list(),
             index=out_df['pos'],
             columns=self.w_pca_obj.sample_lst,
         )
 
         # miss
-        self.miss = pd.DataFrame(
+        self.miss_df = pd.DataFrame(
             data=out_df['n_miss'].to_list(),
             index=out_df['pos'],
             columns=self.w_pca_obj.sample_lst,
             dtype='Int64',
         )
 
-        # stats: window index, pc_1/pc_2 variance explained, number of variants
-        self.stat = out_df[['pos', 'n_var', 'pc_1_ve', 'pc_2_ve', ]].copy()
-        self.stat = self.stat.reset_index().rename(columns={'index': 'w_idx'})
-        self.stat = self.stat.set_index('pos')
+        # stats: window index, pc_a/pc_b variance explained, number of variants
+        self.stat_df = out_df[
+            ['pos', 'n_var', f'pc_{self.pc_a}_ve', f'pc_{self.pc_b}_ve', ]
+        ].copy()
+        self.stat_df = self.stat_df.reset_index()
+        self.stat_df = self.stat_df.rename(columns={'index': 'w_idx'})
+        self.stat_df = self.stat_df.set_index('pos')
 
 
     def from_files(self):
@@ -106,32 +111,32 @@ class WPCAData:
         log.info(f'Reading data from prefix "{self.prefix}*"')
 
         # flush existing instance variables
-        self.pc_1, self.pc_2, self.hetp, self.miss, self.stat = \
+        self.pc_a_df, self.pc_b_df, self.hetp_df, self.miss_df, self.stat_df = \
             None, None, None, None, None
 
-        # pc_1
-        self.pc_1 = pd.read_csv(
-            f'{self.prefix}.{self.suffix_dct["pc_1"]}',
+        # pc_a
+        self.pc_a_df = pd.read_csv(
+            f'{self.prefix}.{self.suffix_dct["pc_a"]}',
             sep='\t',
             index_col='pos',
         )
 
-        # pc_2
-        self.pc_2 = pd.read_csv(
-            f'{self.prefix}.{self.suffix_dct["pc_2"]}',
+        # pc_b
+        self.pc_b_df = pd.read_csv(
+            f'{self.prefix}.{self.suffix_dct["pc_b"]}',
             sep='\t',
             index_col='pos',
         )
 
         # hetp
-        self.hetp = pd.read_csv(
+        self.hetp_df = pd.read_csv(
             f'{self.prefix}.{self.suffix_dct["hetp"]}',
             sep='\t',
             index_col='pos',
         )
 
         # # miss
-        # self.miss = pd.read_csv(
+        # self.miss_df = pd.read_csv(
         #     f'{self.prefix}.{self.suffix_dct["miss"]}',
         #     sep='\t',
         #     index_col='pos',
@@ -139,7 +144,7 @@ class WPCAData:
         # )
 
         # stat
-        self.stat = pd.read_csv(
+        self.stat_df = pd.read_csv(
             f'{self.prefix}.{self.suffix_dct["stat"]}',
             sep='\t',
             index_col='pos',
@@ -148,7 +153,7 @@ class WPCAData:
 
     def to_files(self):
         '''
-        Write output (pc_1, pc_2, hetp, miss, stat) to files.
+        Write output (pc_a_df, pc_b_df, hetp_df, miss_df, stat_df) to files.
         '''
 
         # create output directory if prefix contains '/'
@@ -156,28 +161,33 @@ class WPCAData:
             if not os.path.exists('/'.join(self.prefix.split('/')[0:-1]) + '/'):
                 os.makedirs('/'.join(self.prefix.split('/')[0:-1]) + '/')
 
-        # pc_1
-        self.pc_1.to_csv(
-            f'{self.prefix}.{self.suffix_dct["pc_1"]}',
+        # pc_a
+        self.pc_a_df = self.pc_a_df.round(3)
+        self.pc_a_df.to_csv(
+            f'{self.prefix}.{self.suffix_dct["pc_a"]}',
             sep='\t', index_label='pos', na_rep='NA')
 
-        # pc_2
-        self.pc_2.to_csv(
-            f'{self.prefix}.{self.suffix_dct["pc_2"]}',
+        # pc_b
+        self.pc_b_df = self.pc_b_df.round(3)
+        self.pc_b_df.to_csv(
+            f'{self.prefix}.{self.suffix_dct["pc_b"]}',
             sep='\t', index_label='pos', na_rep='NA')
 
         # hetp
-        self.hetp.to_csv(
+        self.hetp_df = self.hetp_df.round(3)
+        self.hetp_df.to_csv(
             f'{self.prefix}.{self.suffix_dct["hetp"]}',
             sep='\t', index_label='pos', na_rep='NA')
 
         # # miss
-        # self.miss.to_csv(
+        # self.miss_df = self.miss_df.round(3)
+        # self.miss_df.to_csv(
         #     f'{self.prefix}.{self.suffix_dct["miss"]}',
         #     sep='\t', index_label='pos', na_rep='NA')
 
         # stat
-        self.stat.to_csv(
+        self.stat_df = self.stat_df.round(3)
+        self.stat_df.to_csv(
             f'{self.prefix}.{self.suffix_dct["stat"]}',
             sep='\t', index_label='pos', na_rep='NA')
 

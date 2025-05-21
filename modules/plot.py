@@ -31,6 +31,8 @@ class Plot:
                  stat_var=None,
                  prefix=None,
                  data=None,
+                 pc_a=None,
+                 pc_b=None,
                  chrom=None,
                  start=None,
                  end=None,
@@ -54,6 +56,8 @@ class Plot:
         self.stat_var = stat_var
         self.prefix = prefix
         self.data = data
+        self.pc_a = pc_a
+        self.pc_b = pc_b
         self.chrom = chrom
         self.start = start
         self.end = end
@@ -79,14 +83,22 @@ class Plot:
         self.group_lst = None
         self.color_dct = None
         self.fig = None
+        self.plot_pc = None
 
-        # set plot_var display name
-        if   self.plot_var == 'pc_1':
-            self.plot_var_disp = 'PC 1'
-        elif self.plot_var == 'pc_2':
-            self.plot_var_disp = 'PC 2'
-        elif self.plot_var == 'hetp':
+        # reformat plot_var and set display name
+        if self.plot_var == 'hetp':
+            self.plot_df == 'hetp_df'
             self.plot_var_disp = 'SNP Heterozygosity'
+        elif self.plot_var == 'miss':
+            self.plot_df == 'miss_df'
+            self.plot_var_disp = 'Missingness'
+        else:
+            pc = 'a' if str(self.plot_var) == str(self.pc_a) else 'b'           # improve by eliminating str() usage
+            self.plot_pc = self.plot_var
+            self.plot_var =  f'pc_{pc}'
+            self.plot_df = f'pc_{pc}_df'
+            self.plot_var_disp = f'PC {self.plot_pc}'
+        stat_var = f'{stat_var}_df'                                             ## CHECK BACK
 
         # define custom color scale
         # colors = ['blue', 'blue', 'purple', 'red', 'yellow']
@@ -94,7 +106,9 @@ class Plot:
         thresholds = [0, 0.25, 0.5, 0.75, 1]
 
         # create the colorscale
-        colorscale = [[threshold, color] for threshold, color in zip(thresholds, colors)]
+        colorscale = [
+            [threshold, color] for threshold, color in zip(thresholds, colors)
+        ]
                      
         # set color scheme
         self.color_scale = colorscale # or set inbuilt schemes like 'Plasma'
@@ -109,6 +123,11 @@ class Plot:
         '''
 
         return df.iloc[::interval, :]
+
+    @staticmethod
+    def is_hex(code):
+        ok = 'abcdefABCDEF0123456789'
+        return all(x in ok for x in code)
 
 
     def annotate(self):
@@ -134,11 +153,8 @@ class Plot:
                 self.metadata_path, sep='\t', index_col=0, dtype=str
             )
             if len(self.metadata_df.index) != len(set(self.metadata_df.index)):
-                log.newline()
-                log.error('The provided metadata file contains non-unique'
-                          ' sample IDs')
-                log.newline()
-
+                log.error_nl('-m/--metadata: metadata file contains'
+                          ' non-unique sample IDs')
             # subset and reorder metadata_df to match data_df individuals
             self.metadata_df = self.metadata_df.loc[
                 self.metadata_df.index.intersection(sample_lst)
@@ -147,10 +163,8 @@ class Plot:
             # if individuals are missing in the metadata print error message
             if len(self.metadata_df) != len(sample_lst):
                 log.newline()
-                log.error('One or more sample IDs are missing in the'
-                          ' provided metadata file')
-                log.newline()
-
+                log.error_nl('-m/--metadata: one or more sample IDs are missing'
+                          ' in the provided metadata file')
 
             # add metadata columns to data_df
             for column_name in self.metadata_df.columns:
@@ -171,7 +185,7 @@ class Plot:
             self.data_df,
             id_vars=id_var_lst,
             var_name='pos',
-            value_name=self.plot_var,
+            value_name=self.plot_var_disp,
         )
 
 
@@ -182,6 +196,13 @@ class Plot:
 
         # fetch group_id (=color_by) if specified, else default to 'id'
         self.group_id = self.color_by if not self.color_by is None else 'id'
+
+        # check if group exist in metadata column names
+        if self.group_id not in self.metadata_df.columns:
+            log.error_nl(
+                f'-g/--groups: "{self.group_id}" is not the name of a column'
+                 ' in the specified metadata file (-m/--metadata)'
+            )
 
         # get list of groups/ids
         self.group_lst = list(set(self.data_df[self.group_id]))
@@ -196,10 +217,8 @@ class Plot:
                     dtype=np.float64
                 )
             except:
-                log.newline()
-                log.error('Provided column (-g/--groups) contains non-numerical'
-                          ' values')
-                log.newline()
+                log.error_nl('--n/--numeric: provided column (-g/--groups)'
+                          ' contains non-numerical values')
             # scale to 0-1
             norm_val_lst = (
                 val_lst-np.nanmin(val_lst))/\
@@ -228,13 +247,20 @@ class Plot:
                 ])
 
         # define colors based on plotly default colors or specified HEX codes;
-        # print error messages if HEX codes are missing for specified groups
+        # print error messages if HEX codes are missing for specified groups or
+        # malformatted
         elif self.hex_code_dct:
+            #print(self.hex_code_dct.values()[0])
             self.color_dct = self.hex_code_dct
             if not all(x in self.color_dct.keys() for x in self.group_lst):
-                log.newline()
-                log.error('HEX codes missing for one or more groups')
-                log.newline()
+                log.error_nl(
+                    '-c/--colors: HEX codes missing for one or more groups'
+                )
+            elif not all(self.is_hex(x[1:]) for x in self.color_dct.values()) \
+                or not all(len(x) == 7 for x in self.color_dct.values()):
+                log.error_nl(
+                    '-c/--colors: HEX codes not formatted correctly – please'
+                    ' refer to the documentation')
             else:
                 # set color_dct keys as group_lst to set plotting order
                 self.group_lst = list(self.color_dct.keys())
@@ -257,11 +283,15 @@ class Plot:
         '''
         Save figure in HTML and/or other (PDF, SVG, PNG) format(s).
         '''
+        if self.plot_var in ['hetp', 'miss']:
+            filename = self.plot_var
+        else:
+            filename = f'pc_{self.plot_pc}'
         for fmt in self.plot_fmt_lst:
             if fmt == 'html':
-                self.fig.write_html(f'{self.prefix}.{self.plot_var}.{fmt}')
+                self.fig.write_html(f'{self.prefix}.{filename}.{fmt}')
             else:
-                self.fig.write_image(f'{self.prefix}.{self.plot_var}.{fmt}')
+                self.fig.write_image(f'{self.prefix}.{filename}.{fmt}')
 
 
     def chromplot(self):
@@ -273,8 +303,8 @@ class Plot:
         # LOAD & PREPARE DATA
 
         # load data
-        self.data_df = getattr(self.data, self.plot_var)
-        self.stat_df = getattr(self.data, 'stat')
+        self.data_df = getattr(self.data, self.plot_df)
+        self.stat_df = getattr(self.data, 'stat_df')
 
         # subset if interval (-i) is specified
         if self.interval:
@@ -300,8 +330,8 @@ class Plot:
 
         # parse display name for top panel: variance explained or n of sites
         display_name = \
-            '% heterozygous sites' if self.stat_var == 'hetp' else \
-            '% variance explained'
+            '% heterozygous sites' if self.stat_var == 'hetp_df' else \
+            '% variance explained'                                              ## CHECK BACK
 
         # create mask of stretches of None
         split_mask = self.stat_df[[self.stat_var]].notna().all(axis=1)
@@ -382,7 +412,7 @@ class Plot:
                 # append x, y and hover values (separated by None to isolate
                 # individuals plotted as part of the same trace)
                 x_val_lst += sample_df['pos'].tolist() + [None]
-                y_val_lst += sample_df[self.plot_var].tolist() + [None]
+                y_val_lst += sample_df[self.plot_var_disp].tolist() + [None]
                 hover_str_lst += hover_data + [None]
 
             # plot
@@ -496,9 +526,6 @@ class Plot:
             ),
             row=2, col=1)
 
-        # save image
-        self.savefig()
-
 
     def genomeplot(self):
         '''
@@ -524,8 +551,8 @@ class Plot:
         for run_id in self.run_id_lst:
 
             # load data
-            data = WPCAData(self.run_prefix + run_id)
-            self.data_df = getattr(data, self.plot_var)
+            self.data = WPCAData(self.run_prefix + run_id, self.pc_a, self.pc_b)
+            self.data_df = getattr(self.data, self.plot_df)
 
             # subset if interval (-i) is specified
             if self.interval:
@@ -590,7 +617,7 @@ class Plot:
                 # append x, y and hover values (separated by None to isolate
                 # individuals plotted as part of the same trace)
                 x_val_lst += sample_df['genome_pos'].tolist() + [None]
-                y_val_lst += sample_df[self.plot_var].tolist() + [None]
+                y_val_lst += sample_df[self.plot_var_disp].tolist() + [None]
                 hover_str_lst += hover_data + [None]
 
             # plot
@@ -704,4 +731,3 @@ class Plot:
             self.prefix = f'{self.run_prefix}genomeplot'
         else:
             self.prefix = f'{self.run_prefix}.genomeplot'
-        self.savefig()
