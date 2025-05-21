@@ -418,7 +418,7 @@ class CLI:
         if self.args.get('region'):
             if ':' not in self.args['region'] or '-' not in self.args['region']:
                 log.error_nl(
-                    f'REGION: {self.args['region']} is formatted incorrectly,'
+                    f'REGION: {self.args["region"]} is formatted incorrectly,'
                      ' please make sure to specify genomic coordinates:'
                      ' correctly chrom:start-end (start and end must always be'
                      ' specified)'
@@ -437,7 +437,7 @@ class CLI:
             else:
                 if not os.path.exists(self.args['samples']):
                     log.error_nl(
-                        f'-s/--samples: {self.args['samples']}: file does not'
+                        f'-s/--samples: {self.args["samples"]}: file does not'
                          ' exist'
                     )
                 else:
@@ -490,7 +490,7 @@ class CLI:
         if self.args.get('metadata_path'):
             if not os.path.exists(self.args['metadata_path']):
                 log.error_nl(
-                    f'-m/--metadata: {self.args['metadata_path']}: file does'
+                    f'-m/--metadata: {self.args["metadata_path"]}: file does'
                      ' not exist'
                 )
 
@@ -526,10 +526,10 @@ class CLI:
                 self.args['run_id_lst'] = self.args['run_ids'].split(',')
             for r_id in self.args['run_id_lst']:
                 path = \
-                    f"{self.args['run_prefix']}{r_id}.pc_{config.PC_A}.tsv.gz"
+                    f"{self.args["run_prefix"]}{r_id}.pc_{config.PC_A}.tsv.gz"
                 if not os.path.exists(path):
                     log.error_nl(
-                        f'RUN_PREFIX: {self.args['run_prefix']}{r_id} does'
+                        f'RUN_PREFIX: {self.args["run_prefix"]}{r_id} does'
                          ' not exist or is incomplete'
                     )
 
@@ -570,5 +570,5 @@ class CLI:
                 not in [self.args['pc_a'], self.args['pc_b'], 'both']:
                 log.error_nl(
                     f'-c/--principal_component: no data found for PC'
-                    f' {self.args['pol_pc']}'
+                    f' {self.args["pol_pc"]}'
                 )
