@@ -526,7 +526,7 @@ class CLI:
                 self.args['run_id_lst'] = self.args['run_ids'].split(',')
             for r_id in self.args['run_id_lst']:
                 path = \
-                    f"{self.args["run_prefix"]}{r_id}.pc_{config.PC_A}.tsv.gz"
+                    f'{self.args["run_prefix"]}{r_id}.pc_{config.PC_A}.tsv.gz'
                 if not os.path.exists(path):
                     log.error_nl(
                         f'RUN_PREFIX: {self.args["run_prefix"]}{r_id} does'
