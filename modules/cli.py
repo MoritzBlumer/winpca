@@ -410,7 +410,7 @@ class CLI:
             else:
                 if not os.path.exists(path):
                     log.error_nl(
-                        f'VARIANT_FILE: {self.args['variant_file_path']}:'
+                        f'VARIANT_FILE: {self.args["variant_file_path"]}:'
                          ' file does not exist'
                     )
 
