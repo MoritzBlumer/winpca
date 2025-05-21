@@ -226,7 +226,7 @@ def main():
         if args['plot_var'] == 'hetp':                                      # ADD miss?
             stat_var = 'n_var'
         else:
-            stat_var = f'pc_{args['plot_var']}_ve'
+            stat_var = f'pc_{args["plot_var"]}_ve'
 
         # load module & instantiate
         from modules.plot import Plot
