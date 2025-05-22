@@ -184,7 +184,6 @@ class WPCA:
         Remove POS info, convert to numpy array and apply target function or
         return empty array if there are no variants.
         '''
-
         # non-empty: trim off pos info, convert to numpy arr, drop missing
         # sites or mean impute, apply min_maf filter
         if self.win:
@@ -488,8 +487,22 @@ class WPCA:
             list(range(self.start, self.stop-self.w_size+2, self.w_step))
         )
 
-        # open iput file
+        # determin compression
         read_func = gzip.open if self.variant_file_path.endswith('.gz') else open
+
+        # for VCF: read first 10000 lines to check if multiallellic
+        if self.file_fmt == 'VCF':
+            with read_func(self.variant_file_path, 'rt') as check_gts:
+                rows = [next(check_gts) for _ in range(10000)]
+                rows = [x for x in rows if not x.startswith('#')]
+                alts = [x.split('\t')[4] for x in rows]
+                if any([len(x.split(',')) > 1 for x in alts]):
+                    log.error_nl(
+                        f'VARIANT_FILE: {self.variant_file_path}'
+                            ' contains sites with more than 2 alleles'
+                    )
+
+        # open iput file
         with read_func(self.variant_file_path, 'rt') as variant_file:
 
             # fetch sample ids from different header types
@@ -539,18 +552,6 @@ class WPCA:
 
                 if self.file_fmt == 'VCF':
 
-                    # read first 5000 lines to check if multiallellic
-                    with read_func(self.variant_file_path, 'rt') as check_gts:
-                        rows = [next(check_gts) for _ in range(5000)]
-                        rows = [x for x in rows if not x.startswith('#')]
-                        alt = [x.split('\t')[4] for x in rows]
-                        #print(alt)
-                        if any([len(x.split(',')) > 1 for x in alt]):
-                            log.error_nl(
-                                f'VARIANT_FILE: {self.variant_file_path}'
-                                 ' contains sites with more than 2 alleles'
-                            )
-
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
@@ -563,15 +564,11 @@ class WPCA:
                         gts = [self.gt_code_dct[x] for x in gts]
                         if self.skip_monomorphic and len(set(gts)) == 1:
                             continue
-                        while self.w_stop < pos:
-                            if self.win: self.gt_process_win()
-                            if self.stop < self.w_stop: break
+                        while pos > self.w_stop:
+                            self.gt_process_win()
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + gts)
-                        if self.w_stop <= pos:
-                            self.gt_process_win()
-                            if self.stop < self.w_stop: break
-                            self.init_win()
+                        if pos >= self.stop and self.stop < self.w_stop: break
 
                 if self.file_fmt == 'TSV':
                     for line in variant_file:
@@ -581,15 +578,11 @@ class WPCA:
                         pos = int(line[1])
                         gts = [line[2:][idx] for idx in sample_idx_lst]
                         if self.skip_monomorphic and len(set(gts)) == 1: continue
-                        while self.w_stop < pos:
-                            if self.win: self.gt_process_win()
-                            if self.stop < self.w_stop: break
+                        while pos > self.w_stop:
+                            self.gt_process_win()
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + gts)
-                        if self.w_stop <= pos:
-                            self.gt_process_win()
-                            if self.stop < self.w_stop: break
-                            self.init_win()
+                        if pos >= self.stop and self.stop < self.w_stop: break
 
             # GL
             if self.var_fmt == 'GL':
@@ -621,15 +614,11 @@ class WPCA:
                         if gls == []: continue
                         # delete 3rd field for each GL (expected by PCAngsd)
                         gls = np.delete(gls, np.s_[2::3], axis=1)
-                        while self.w_stop < pos:
-                            if self.win: self.pl_process_win()
-                            if self.stop < self.w_stop: break
+                        while pos > self.w_stop:
+                            self.gl_process_win()
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + gls)
-                        if self.w_stop <= pos:
-                            self.pl_process_win()
-                            if self.stop < self.w_stop: break
-                            self.init_win()
+                        if pos >= self.stop and self.stop < self.w_stop: break
 
                 if self.file_fmt == 'TSV':
                     for line in variant_file:
@@ -638,14 +627,11 @@ class WPCA:
                         if q_chrom != self.chrom: continue
                         pos = int(line[1])
                         gls = [line[2:][idx] for idx in sample_idx_lst]
-                        while self.w_stop < pos:
-                            if self.win: self.gl_process_win()
-                            if self.stop < self.w_stop: break
+                        while pos > self.w_stop:
+                            self.gl_process_win()
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + gls)
-                        if self.w_stop <= pos:
-                            self.gl_process_win()
-                            if self.stop < self.w_stop: break
+                        if pos >= self.stop and self.stop < self.w_stop: break
 
                 if self.file_fmt == 'BEAGLE':
                     for line in variant_file:
@@ -654,14 +640,12 @@ class WPCA:
                         if q_chrom != self.chrom: continue
                         pos = int(line[0].rsplit('_', 1)[1])
                         gls = [line[3:][idx] for idx in sample_idx_lst]
-                        while self.w_stop < pos:
-                            if self.win: self.gl_process_win()
-                            if self.stop < self.w_stop: break
+                        while pos > self.w_stop:
+                            self.gl_process_win()
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + gls)
-                        if self.w_stop <= pos:
-                            self.gl_process_win()
-                            if self.stop < self.w_stop: break
+                        if pos >= self.stop and self.stop < self.w_stop: break
+
 
             # PL
             if self.var_fmt == 'PL':
@@ -691,15 +675,11 @@ class WPCA:
                         # where length of PLs != 3* n_samples
                         pls = [] if (len(pls)) != len(sample_idx_lst)*3 else pls
                         if pls == []: continue
-                        while self.w_stop < pos:
-                            if self.win: self.pl_process_win()
-                            if self.stop < self.w_stop: break
+                        while pos > self.w_stop:
+                            self.pl_process_win()
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + pls)
-                        if self.w_stop <= pos:
-                            self.pl_process_win()
-                            if self.stop < self.w_stop: break
-                            self.init_win()
+                        if pos >= self.stop and self.stop < self.w_stop: break
 
                 if self.file_fmt == 'TSV':
                     for line in variant_file:
@@ -708,15 +688,11 @@ class WPCA:
                         if q_chrom != self.chrom: continue
                         pos = int(line[1])
                         pls = [line[2:][idx] for idx in sample_idx_lst]
-                        while self.w_stop < pos:
-                            if self.win: self.pl_process_win()
-                            if self.stop < self.w_stop: break
+                        while pos > self.w_stop:
+                            self.pl_process_win()
                             self.init_win()
                         if pos > self.w_start: self.win.append([pos] + pls)
-                        if self.w_stop <= pos:
-                            self.pl_process_win()
-                            if self.stop < self.w_stop: break
-                            self.init_win()
+                        if pos >= self.stop and self.stop < self.w_stop: break
 
         # check if any windows were processed
         if len(self.out_dct) == 0:
