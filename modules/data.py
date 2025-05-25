@@ -2,6 +2,7 @@
 Central class to store, read, write and modify PCA and associated data.
 '''
 
+
 ## IMPORT PACKAGES
 import os
 import pandas as pd
@@ -49,7 +50,7 @@ class WPCAData:
         # pc_dfs
         for pc in self.pcs:
             setattr(
-                self, 
+                self,
                 f'pc_{pc}_df',
                 pd.DataFrame(
                     data=out_df[f'pc_{pc}'].to_list(),
@@ -75,7 +76,7 @@ class WPCAData:
 
         # stats: window index, PCs variance explained, number of variants
         self.stat_df = out_df[
-            ['pos', 'w_start', 'w_stop', 'w_size', 'n_var',] 
+            ['pos', 'w_start', 'w_stop', 'w_size', 'n_var',]
             + [f'pc_{i}_ve' for i in range(1, 11)]
         ].copy().round(3)
         self.stat_df = self.stat_df.reset_index()
@@ -96,13 +97,11 @@ class WPCAData:
         for attr in list(vars(self)):
             if attr.endswith('_df'):
                 delattr(self, attr)
-        # self.hetp_df, self.miss_df, self.stat_df = \
-        #     None, None, None
 
         # pc_dfs
         for pc in self.pcs:
             setattr(
-                self, 
+                self,
                 f'pc_{pc}_df',
                 pd.read_csv(
                     f'{self.prefix}.pc_{pc}.tsv.gz',

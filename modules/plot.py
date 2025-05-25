@@ -2,6 +2,7 @@
 Plot PC and associated data chromosome- and genome-wide.
 '''
 
+
 ## IMPORT PACKAGES
 import pandas as pd
 import numpy as np
@@ -31,6 +32,7 @@ class Plot:
                  stat_var=None,
                  prefix=None,
                  data=None,
+                 pcs=None,
                  chrom=None,
                  start=None,
                  end=None,
@@ -54,6 +56,7 @@ class Plot:
         self.stat_var = stat_var
         self.prefix = prefix
         self.data = data
+        self.pcs = pcs
         self.chrom = chrom
         self.start = start
         self.end = end
@@ -82,10 +85,8 @@ class Plot:
 
         # reformat plot_var and set display name
         if self.plot_var == 'hetp':
-            #self.df_name = 'hetp_df'
             self.plot_var_disp = 'SNP Heterozygosity'
         elif self.plot_var == 'miss':
-            #self.df_name = 'miss_df'
             self.plot_var_disp = 'Missingness'
         else:
             self.plot_var_disp = f'PC {self.plot_var}'
@@ -115,6 +116,7 @@ class Plot:
         '''
 
         return df.iloc[::interval, :]
+
 
     @staticmethod
     def is_hex(code):

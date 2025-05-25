@@ -4,6 +4,7 @@
 WinPCA. A package for windowed PC analysis.
 """
 
+
 ## IMPORT CONFIG
 from modules import config
 
@@ -120,7 +121,7 @@ def main():
         # adaptive
         if args['polarize'] == 'auto':
             for pc in args['pol_pcs']:
-                data.modify_data(                                              # pylint: disable=E0606      
+                data.modify_data(                                              # pylint: disable=E0606
                     f'pc_{pc}_df', polarize.adaptive, args['n_prev_windows']
                 )
 
@@ -190,7 +191,7 @@ def main():
 
         # infer stat_var
         if args['plot_var'] == 'hetp':
-            if len(list(data.stat_df['n_var'])[:-1]) == 1:                
+            if len(list(data.stat_df['n_var'])[:-1]) == 1:
                 stat_var = 'n_var'
             else:
                 stat_var = 'w_size'
@@ -203,6 +204,7 @@ def main():
                     stat_var=stat_var,
                     prefix=args['prefix'],
                     data=data,
+                    pcs=args['pcs'],
                     chrom=args['chrom'],
                     start=args['start'],
                     end=args['end'],
@@ -231,6 +233,7 @@ def main():
         # load module & instantiate
         from modules.plot import Plot
         plot = Plot(args['plot_var'],
+                    pcs=args['pcs'],
                     run_prefix=args['run_prefix'],
                     run_id_lst=args['run_id_lst'],
                     metadata_path=args['metadata_path'],
