@@ -161,7 +161,7 @@ class Polarize:
                 # window closer to flipped prev_window --> 1 (=flip)
                 if abs(window - prev_window) > abs(window - (prev_window*-1)):
                     flip.append(1)
-                    prev_window = (window*-1) # flip prev_window
+                    prev_window = window*-1 # flip prev_window
 
                 # window closer to 'unflipped' prev_window --> -1 (=don't flip)
                 else:
@@ -236,7 +236,7 @@ class Flip:
         for w in w_flip_lst:
             if w not in pc_df.index:
                 missing_lst.append(w)
-        if missing_lst != []:
+        if missing_lst:
             log.error_nl('-w/--windows: he following windows are not'
                        ' represented in the supplied data:'
                       f' {",".join(missing_lst)}')

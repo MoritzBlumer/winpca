@@ -162,7 +162,7 @@ class WPCAData:
             if not os.path.exists(
                 f'{"/".join(self.prefix.split('/')[0:-1])}/'
             ):
-                os.makedirs(f'"/".join(self.prefix.split('/')[0:-1])/')
+                os.makedirs(f'{"/".join(self.prefix.split('/')[0:-1])}/')
 
         # pc_a
         self.pc_a_df = self.pc_a_df.round(3)

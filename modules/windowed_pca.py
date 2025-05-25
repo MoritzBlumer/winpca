@@ -12,7 +12,7 @@ if config.VAR_FMT == 'GT':
     import allel
 else:
     from pcangsd.shared import emMAF
-    from pcangsd.reader_cy import filterArrays                                  # pylint: disable=E0611
+    from pcangsd.reader_cy import filterArrays                                 # pylint: disable=E0611
     from pcangsd.covariance import emPCA
     os.environ["OMP_NUM_THREADS"] = str(config.N_THREADS)
     os.environ["OPENBLAS_NUM_THREADS"] = str(config.N_THREADS)
@@ -131,13 +131,13 @@ class WPCA:
             self.init_win()
         if self.pos >= self.stop:
             if (self.proc_trail_trunc_w
-                and any([x[0] > self.w_stop for x in self.win])
+                and any(x[0] > self.w_stop for x in self.win)
             ):
                 self.w_stop = self.stop
                 process_func()
                 self.init_win()
             return True
-        if self.pos >= self.w_start: 
+        if self.pos >= self.w_start:
             self.win.append([self.pos] + values)
         return False
 
@@ -155,7 +155,7 @@ class WPCA:
             self.init_win_x()
         if self.pos >= self.stop:
             if self.proc_trail_trunc_w:
-                if (len(self.win) > (self.w_size-self.w_step)):
+                if len(self.win) > (self.w_size-self.w_step):
                     self.w_start = self.win[0][0]
                     self.w_stop = self.stop
                     process_func()
@@ -271,8 +271,8 @@ class WPCA:
         # emMAF expects different numbers of args depending on the version
         try:
             self.gl_min_maf_arr = emMAF(self.w_gl_arr, 200, 1e-4)
-        except:
-            self.gl_min_maf_arr = emMAF(
+        except:                                                                # pylint: disable=W0702,E0606
+            self.gl_min_maf_arr = emMAF(                                       # pylint: disable=E1121
                 self.w_gl_arr, 200, 1e-4, self.n_threads
             )
             log.info('PCAngsd version is outdated, updating to the latest '
@@ -298,7 +298,7 @@ class WPCA:
 
         # mute STDOUT by redirecting STDOUT tp /dev/null
         old_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, 'w')                                     # pylint: disable=R1732
 
         # non-empty: trim off pos info, convert to numpy arr, apply min_maf
         # filter, convert PL to GL
@@ -331,7 +331,7 @@ class WPCA:
         # reshape pl_arr to have separation by sample as first dimension
         # (to vectorize normalization) --> pl_arr_3d dimensions: (samples,'
         # variants, 3 pl_values)
-        w_pl_arr_3d = self.w_pl_arr.reshape(n_rows, -1, 3).transpose(1, 0, 2)   # pylint: disable=E1121
+        w_pl_arr_3d = self.w_pl_arr.reshape(n_rows, -1, 3).transpose(1, 0, 2)  # pylint: disable=E1121
 
         # unphred
         w_pl_arr_3d = np.power(10, -w_pl_arr_3d/10)
@@ -356,7 +356,7 @@ class WPCA:
 
         # mute STDOUT by redirecting STDOUT tp /dev/null
         old_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
+        sys.stdout = open(os.devnull, 'w')                                     # pylint: disable=R1732
 
         # non-empty: trim off pos info, convert to numpy arr, apply min_maf
         # filter, convert PL to GL
@@ -405,7 +405,7 @@ class WPCA:
         # mean impute
         if self.gt_mean_impute:
             self.gt_mean_imputation()
-        
+
         # drop missing sites (& re-count)
         else:
 
@@ -487,8 +487,8 @@ class WPCA:
                     self.gl_min_maf_arr,
                     self.n_pcs, 100, 1e-5,
                 )
-            except:
-                cov_arr, _, _, _, _ = emPCA(
+            except:                                                            # pylint: disable=W0702
+                cov_arr, _, _, _, _ = emPCA(                                   # pylint: disable=E1121
                     self.w_gl_arr,
                     self.gl_min_maf_arr,
                     self.n_pcs, 100, 1e-5,
@@ -561,7 +561,7 @@ class WPCA:
                 rows = [next(check_gts) for _ in range(10000)]
                 rows = [x for x in rows if not x.startswith('#')]
                 alts = [x.split('\t')[4] for x in rows]
-                if any([len(x.split(',')) > 1 for x in alts]):
+                if any(len(x.split(',')) > 1 for x in alts):
                     log.error_nl(
                         f'VARIANT_FILE: {self.variant_file_path}'
                             ' contains sites with more than 2 alleles'
@@ -620,7 +620,8 @@ class WPCA:
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
-                        if q_chrom != self.chrom: continue
+                        if q_chrom != self.chrom:
+                            continue
                         filter_field = line[6]
                         if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
@@ -634,36 +635,29 @@ class WPCA:
                             and len(set(gts)-{np.nan}) == 1:
                             continue
                         if self.x_mode:
-                            if self.parse_variant_x(
-                                self.gt_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant_x(self.gt_process_win, gts):
+                                break
                         else:
-                            if self.parse_variant(
-                                self.gt_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant(self.gt_process_win, gts):
+                                break
 
                 if self.file_fmt == 'TSV':
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
-                        if q_chrom != self.chrom: continue
+                        if q_chrom != self.chrom:
+                            continue
                         self.pos = int(line[1])
                         gts = [line[2:][idx] for idx in sample_idx_lst]
                         if self.skip_monomorphic \
                             and len(set(gts)-{np.nan}) == 1:
                             continue
                         if self.x_mode:
-                            if self.parse_variant_x(
-                                self.gt_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant_x(self.gt_process_win, gts):
+                                break
                         else:
-                            if self.parse_variant(
-                                self.gt_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant(self.gt_process_win, gts):
+                                break
 
             # GL
             if self.var_fmt == 'GL':
@@ -672,9 +666,11 @@ class WPCA:
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
-                        if q_chrom != self.chrom: continue
+                        if q_chrom != self.chrom:
+                            continue
                         format_field = line[8].split(':')
-                        if not self.var_fmt in format_field: continue
+                        if not self.var_fmt in format_field:
+                            continue
                         filter_field = line[6]
                         if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
@@ -693,55 +689,46 @@ class WPCA:
                         # where length of GLs != 3* n_samples
                         gls = \
                             [] if (len(gls)) != len(sample_idx_lst)* 3 else gls
-                        if gls == []: continue
+                        if gls == []:
+                            continue
                         # delete 3rd field for each GL (expected by PCAngsd)
                         gls = np.delete(gls, np.s_[2::3], axis=1)
                         if self.x_mode:
-                            if self.parse_variant_x(
-                                self.gl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant_x(self.gl_process_win, gls):
+                                break
                         else:
-                            if self.parse_variant(
-                                self.gl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant(self.gl_process_win, gls):
+                                break
 
                 if self.file_fmt == 'TSV':
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
-                        if q_chrom != self.chrom: continue
+                        if q_chrom != self.chrom:
+                            continue
                         self.pos = int(line[1])
                         gls = [line[2:][idx] for idx in sample_idx_lst]
                         if self.x_mode:
-                            if self.parse_variant_x(
-                                self.gl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant_x(self.gl_process_win, gls):
+                                break
                         else:
-                            if self.parse_variant(
-                                self.gl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant(self.gl_process_win, gls):
+                                break
 
                 if self.file_fmt == 'BEAGLE':
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0].rsplit('_', 1)[0]
-                        if q_chrom != self.chrom: continue
+                        if q_chrom != self.chrom:
+                            continue
                         self.pos = int(line[0].rsplit('_', 1)[1])
                         gls = [line[3:][idx] for idx in sample_idx_lst]
                         if self.x_mode:
-                            if self.parse_variant_x(
-                                self.gl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant_x(self.gl_process_win, gls):
+                                break
                         else:
-                            if self.parse_variant(
-                                self.gl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant(self.gl_process_win, gls):
+                                break
 
 
             # PL
@@ -751,9 +738,11 @@ class WPCA:
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
-                        if q_chrom != self.chrom: continue
+                        if q_chrom != self.chrom:
+                            continue
                         format_field = line[8].split(':')
-                        if not self.var_fmt in format_field: continue
+                        if not self.var_fmt in format_field:
+                            continue
                         self.pos = int(line[1])
                         filter_field = line[6]
                         if filter_field != 'PASS' and self.vcf_pass_filter:
@@ -772,35 +761,29 @@ class WPCA:
                         # where length of PLs != 3* n_samples
                         pls = \
                             [] if (len(pls)) != len(sample_idx_lst)*3 else pls
-                        if pls == []: continue
+                        if pls == []:
+                            continue
                         if self.x_mode:
-                            if self.parse_variant_x(
-                                self.pl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant_x(self.pl_process_win, pls):
+                                break
                         else:
-                            if self.parse_variant(
-                                self.pl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant(self.pl_process_win, pls):
+                                break
 
                 if self.file_fmt == 'TSV':
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
-                        if q_chrom != self.chrom: continue
+                        if q_chrom != self.chrom:
+                            continue
                         self.pos = int(line[1])
                         pls = [line[2:][idx] for idx in sample_idx_lst]
                         if self.x_mode:
-                            if self.parse_variant_x(
-                                self.pl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant_x(self.pl_process_win, pls):
+                                break
                         else:
-                            if self.parse_variant(
-                                self.pl_process_win,
-                                gts,
-                            ): break
+                            if self.parse_variant(self.pl_process_win, pls):
+                                break
 
         # check if any windows were processed
         if len(self.out_dct) == 0:

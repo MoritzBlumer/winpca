@@ -2,13 +2,13 @@
 Command line interface.
 '''
 
-## IMPORT CONFIG AND VERSION
-from . import config
-from . import __version__
-
 ## IMPORT PACKAGES
 import os
 import argparse
+
+## IMPORT CONFIG AND VERSION
+from . import config
+from . import __version__
 
 # MODULES
 from modules.log import Log
@@ -24,7 +24,7 @@ class CLI:
     '''
     Command line interface and argument parser
     '''
-    
+
     def __init__(self):
 
         # initiate argument parser
@@ -170,7 +170,7 @@ class CLI:
         polarize_parser.add_argument(
             '-c', '--principal_component', dest='pol_pc', metavar='\b',
             required=False, type=str, default=str(config.POL_PC),
-            choices=[str(config.PC_A), str(config.PC_B), 'both'], 
+            choices=[str(config.PC_A), str(config.PC_B), 'both'],
             help='specify which PC to re-polarize (e.g. "1", "2" or "both")'
              f' [{config.POL_PC}]')
         polarize_parser.add_argument(
@@ -247,7 +247,7 @@ class CLI:
         chromplot_parser.add_argument(
             '-p', '--plot_variable', dest='plot_var', metavar='\b',
             required=False, type=str, default=str(config.PC_A),
-            choices=[str(config.PC_A), str(config.PC_B), 'het'], 
+            choices=[str(config.PC_A), str(config.PC_B), 'het'],
             help='specify what to plot, e.g. "1" for PC 1 or "het" for SNP'
               ' heterozygosity (default: first specified PC)'
              f' [{config.PC_A}]')
@@ -312,7 +312,7 @@ class CLI:
         genomeplot_parser.add_argument(
             dest='run_ids', metavar='<RUN_IDS>',
             type=str, default=None,
-            help=f'comma-separated list of run IDs to include, format: e.g.'
+            help='comma-separated list of run IDs to include, format: e.g.'
               ' {prefix}.{run_id}.pc_1.tsv.gz; also used to determine'
               ' plotting order')
 
@@ -457,12 +457,12 @@ class CLI:
             if len(set(self.args['sample_lst'])) \
                 < len(self.args['sample_lst']):
                 seen, dups = set(), set()
-                for id in self.args['sample_lst']:
-                    dups.add(id) if id in seen else seen.add(id)
+                for s_id in self.args['sample_lst']:
+                    dups.add(s_id) if s_id in seen else seen.add(s_id)
                 log.error_nl(
                     f'-s/--samples: duplicate IDs found: {", ".join(dups)}'
                 )
-        else: 
+        else:
             self.args['sample_lst'] = None
 
         # guide_samples --> guide_sample_lst
@@ -503,7 +503,7 @@ class CLI:
                 )
 
         # hex codes --> hex_code_dct
-        if self.args.get('hex_codes'):       
+        if self.args.get('hex_codes'):
             self.args['hex_code_dct'] = {}
             for i in self.args['hex_codes'].split(','):
                 group, hex_code = i.split(':')[0], i.split(':')[1]
@@ -560,7 +560,7 @@ class CLI:
         # add default values from config if unset
         if not self.args.get('pol_pc'):
             self.args['pol_pc'] = str(config.POL_PC)
-        if self.args.get('no_pass_filter') == True:
+        if self.args.get('no_pass_filter') is True:
             self.args['vcf_pass_filter'] = False
         else:
             self.args['vcf_pass_filter'] = bool(config.VCF_PASS_FILTER)

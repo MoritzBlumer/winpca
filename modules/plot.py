@@ -2,15 +2,15 @@
 Plot PC and associated data chromosome- and genome-wide.
 '''
 
-## IMPORT CONFIG
-from . import config
-
 ## IMPORT PACKAGES
 import pandas as pd
 import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import plotly.colors as p_colors
+
+## IMPORT CONFIG
+from . import config
 
 # MODULES
 from modules.log import Log
@@ -26,7 +26,7 @@ class Plot:
     Plot windowed PC and associated data.
     '''
 
-    def __init__(self,
+    def __init__(self,                                                         # pylint: disable=W0102
                  plot_var,
                  stat_var=None,
                  prefix=None,
@@ -87,18 +87,18 @@ class Plot:
 
         # reformat plot_var and set display name
         if self.plot_var == 'hetp':
-            self.plot_df == 'hetp_df'
+            self.plot_df = 'hetp_df'
             self.plot_var_disp = 'SNP Heterozygosity'
         elif self.plot_var == 'miss':
-            self.plot_df == 'miss_df'
+            self.plot_df = 'miss_df'
             self.plot_var_disp = 'Missingness'
         else:
-            pc = 'a' if str(self.plot_var) == str(self.pc_a) else 'b'           # improve by eliminating str() usage
+            pc = 'a' if str(self.plot_var) == str(self.pc_a) else 'b'
             self.plot_pc = self.plot_var
             self.plot_var =  f'pc_{pc}'
             self.plot_df = f'pc_{pc}_df'
             self.plot_var_disp = f'PC {self.plot_pc}'
-        stat_var = f'{stat_var}_df'                                             ## CHECK BACK
+        stat_var = f'{stat_var}_df'
 
         # define custom color scale
         # colors = ['blue', 'blue', 'purple', 'red', 'yellow']
@@ -109,7 +109,7 @@ class Plot:
         colorscale = [
             [threshold, color] for threshold, color in zip(thresholds, colors)
         ]
-                     
+
         # set color scheme
         self.color_scale = colorscale # or set inbuilt schemes like 'Plasma'
 
@@ -126,6 +126,10 @@ class Plot:
 
     @staticmethod
     def is_hex(code):
+        '''
+        Return True if strings are in ok
+        '''
+
         ok = 'abcdefABCDEF0123456789'
         return all(x in ok for x in code)
 
@@ -209,17 +213,17 @@ class Plot:
 
         # set color_dct for continuous colors
         if self.numeric:
-            import plotly.colors as p_colors
+
             # replace None (pandas) with np.nan (numpy), else through an error
             try:
                 val_lst = np.array(
                     [
-                        np.nan if x in self.na_lst else x 
+                        np.nan if x in self.na_lst else x
                         for x in self.group_lst
                     ],
                     dtype=np.float64
                 )
-            except:
+            except:                                                            # pylint: disable=W0702
                 log.error_nl('--n/--numeric: provided column (-g/--groups)'
                           ' contains non-numerical values')
             # scale to 0-1
@@ -268,9 +272,9 @@ class Plot:
                 # set color_dct keys as group_lst to set plotting order
                 self.group_lst = list(self.color_dct.keys())
 
-        # use defaultcolors
+        # use default colors
         else:
-            import plotly.colors as p_colors
+
             def_col_lst = p_colors.DEFAULT_PLOTLY_COLORS
             self.color_dct = {
                 self.group_lst[idx]: def_col_lst[idx % len(def_col_lst)] \
@@ -372,8 +376,8 @@ class Plot:
                     mode='lines',
                     text=hover_data,
                     hoverinfo='text',
-                    hoverlabel=dict(font_size=8),
-                    line=dict(color='#4d61b0', width=1),
+                    hoverlabel={'font_size': 8},
+                    line={'color':'#4d61b0', 'width': 1},
                     fill='tozeroy',
                     connectgaps=False,
                 ),
@@ -429,11 +433,11 @@ class Plot:
                     y=y_val_lst,
                     text=hover_str_lst,
                     hoverinfo='text',
-                    hoverlabel=dict(font_size=8),
+                    hoverlabel={'font_size': 8},
                     name=list(sample_df[self.group_id])[0],
                     legendgroup=list(sample_df[self.group_id])[0],
                     mode='lines',
-                    line=dict(color=self.color_dct[group]),
+                    line={'color': self.color_dct[group]},
                     connectgaps=False,
                     showlegend=show_legend,
                 ),
@@ -449,17 +453,17 @@ class Plot:
             font_color='black',
             width=self.chromplot_w,
             height=self.chromplot_h,
-            legend=dict(font=dict(size=10)),
+            legend={'font': {'size': 10}},
             )
 
         # format lines
         self.fig.update_traces(
             row=1, col=1,
-            line=dict(width=.7, color='lightgrey'),
+            line={'width': .7, 'color': 'lightgrey'},
         )
         self.fig.update_traces(
             row=2, col=1,
-            line=dict(width=.7),
+            line={'width': .7},
         )
 
         # format x axis
@@ -475,24 +479,25 @@ class Plot:
             range=[self.start, self.end],
             linewidth=1,
             side='bottom', mirror=True,
-            ticks='outside', tickfont=dict(size=10), tickformat=',.0f',
-            title_font=dict(size=12),
-            title=dict(text='<b>Genomic position (bp)', standoff=10))
+            ticks='outside', tickfont={'size': 10}, tickformat=',.0f',
+            title_font={'size': 12},
+            title={'text': '<b>Genomic position (bp)', 'standoff': 10}
+        )
 
         # format y axis
         self.fig.update_yaxes(
             row=1, col=1,
             linewidth=1,
             side='left', mirror=True,
-            ticks='outside', tickfont=dict(size=10),
+            ticks='outside', tickfont={'size': 10},
         )
         self.fig.update_yaxes(
             row=2, col=1,
             linewidth=1,
             side='left', mirror=True,
-            ticks='outside', tickfont=dict(size=10),
-            title_font=dict(size=12),
-            title=dict(text='<b>' + self.plot_var_disp, standoff=0),
+            ticks='outside', tickfont={'size': 10},
+            title_font={'size': 12},
+            title={'text': f'<b>{self.plot_var_disp}', 'standoff': 0},
         )
 
         # plot colorscale instead of per-sample legend for numeric metadata
@@ -504,31 +509,31 @@ class Plot:
             min_val = min(val_lst)
             max_val = max(val_lst)
             self.fig.update_layout(
-                coloraxis=dict(
-                    colorscale=self.color_scale,
-                    cmin=min_val,
-                    cmax=max_val,
-                    colorbar=dict(
-                        len=0.7,
-                        thickness=10,
-                        title=dict(
-                            text=self.color_by,
-                            font=dict(size=10),
-                            side='right'
-                        ),
-                        tickvals=[min_val, max_val],
-                        tickfont=dict(size=10),
-                    ),
-                ),
+                coloraxis={
+                    'colorscale': self.color_scale,
+                    'cmin': min_val,
+                    'cmax': max_val,
+                    'colorbar': {
+                        'len': 0.7,
+                        'thickness': 10,
+                        'title': {
+                            'text': self.color_by,
+                            'font': {'size': 10},
+                            'side': 'right'
+                        },
+                        'tickvals': [min_val, max_val],
+                        'tickfont': {'size': 10},
+                    },
+                },
             )
             self.fig.add_trace(go.Scatter(
                 x=[None],
                 y=[None],
                 mode='markers',
-                marker=dict(
-                    color=[0],
-                    coloraxis='coloraxis'
-                ),
+                marker={
+                    'color': [0],
+                    'coloraxis': 'coloraxis'
+                },
                 showlegend=False,
             ),
             row=2, col=1)
@@ -641,11 +646,11 @@ class Plot:
                     y=y_val_lst,
                     text=hover_str_lst,
                     hoverinfo='text',
-                    hoverlabel=dict(font_size=8),
+                    hoverlabel={'font_size': 8},
                     name=list(sample_df[self.group_id])[0],
                     legendgroup=list(sample_df[self.group_id])[0],
                     mode='lines',
-                    line=dict(color=self.color_dct[group]),
+                    line={'color': self.color_dct[group]},
                     connectgaps=False,
                     showlegend=show_legend,
                 ),
@@ -660,12 +665,12 @@ class Plot:
             font_color='black',
             width=self.genomeplot_w,
             height=self.genomeplot_h,
-            legend=dict(font=dict(size=10)),
+            legend={'font': {'size': 10}},
             )
 
         # format lines
         self.fig.update_traces(
-            line=dict(width=.7,),
+            line={'width': .7,},
         )
 
         # format x axis
@@ -676,7 +681,7 @@ class Plot:
             ],
             linewidth=1,
             side='bottom', mirror=True,
-            ticks='outside', tickfont=dict(size=10), tickformat=',.0f',
+            ticks='outside', tickfont={'size': 10}, tickformat=',.0f',
             tickvals=chrom_mid_lst,
             ticktext=['<b>' + x for x in self.run_id_lst],
             )
@@ -685,21 +690,28 @@ class Plot:
         self.fig.update_yaxes(
             linewidth=1,
             side='left', mirror=True,
-            ticks='outside', tickfont=dict(size=10),
-            title_font=dict(size=12),
-            title=dict(text='<b>' + self.plot_var_disp, standoff=0),
+            ticks='outside', tickfont={'size': 10},
+            title_font={'size': 12},
+            title={'text': f'<b>{self.plot_var_disp}', 'standoff': 0},
         )
 
         # add vertical lines to separate chromosomes
         for genome_pos in chrom_end_lst[:-1]:
 
             self.fig.add_shape(
-                dict(
-                    type='line',
-                    x0=genome_pos, x1=genome_pos,
-                    y0=0, y1=1, yref='paper',
-                    line=dict(color='#000000', width=.8, dash='1px, 1px',),
-                )
+                {
+                    'type': 'line',
+                    'x0': genome_pos,
+                    'x1': genome_pos,
+                    'y0': 0,
+                    'y1': 1,
+                    'yref': 'paper',
+                    'line': {
+                        'color': '#000000',
+                        'width': .8,
+                        'dash': '1px, 1px',
+                    },
+                }
             )
 
         # plot colorscale instead of per-sample legend for numeric metadata
@@ -711,31 +723,31 @@ class Plot:
             min_val = min(val_lst)
             max_val = max(val_lst)
             self.fig.update_layout(
-                coloraxis=dict(
-                    colorscale=self.color_scale,
-                    cmin=min_val,
-                    cmax=max_val,
-                    colorbar=dict(
-                        len=0.7,
-                        thickness=10,
-                        title=dict(
-                            text=self.color_by,
-                            font=dict(size=10),
-                            side='right'
-                        ),
-                        tickvals=[min_val, max_val],
-                        tickfont=dict(size=10),
-                    ),
-                ),
+                coloraxis={
+                    'colorscale': self.color_scale,
+                    'cmin': min_val,
+                    'cmax': max_val,
+                    'colorbar': {
+                        'len': 0.7,
+                        'thickness': 10,
+                        'title': {
+                            'text': self.color_by,
+                            'font': {'size': 10},
+                            'side': 'right'
+                        },
+                        'tickvals': [min_val, max_val],
+                        'tickfont': {'size': 10},
+                    },
+                },
             )
             self.fig.add_trace(go.Scatter(
                 x=[None],
                 y=[None],
                 mode='markers',
-                marker=dict(
-                    color=[0],
-                    coloraxis='coloraxis'
-                ),
+                marker={
+                    'color': [0],
+                    'coloraxis': 'coloraxis'
+                },
                 showlegend=False,
             ),
             )

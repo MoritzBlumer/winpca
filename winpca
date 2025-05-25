@@ -56,8 +56,8 @@ def main():
             file_fmt = args['variant_file_path'].split('.')[-1].upper()
 
         # update n_threads/var_fmt in CONFIG
-        config.N_THREADS = args['n_threads']                                # WHY IS THIS NECESSARY
-        config.VAR_FMT = args['var_fmt']                                    # WHY IS THIS NECESSARY
+        config.N_THREADS = args['n_threads']
+        config.VAR_FMT = args['var_fmt']
 
         # load module & instantiate
         from modules.windowed_pca import WPCA
@@ -123,7 +123,7 @@ def main():
         # adaptive
         if args['polarize'] == 'auto':
             if args['pol_pc'] == 'both':
-                data.modify_data(
+                data.modify_data(                                              # pylint: disable=E0606      
                     'pc_a_df', polarize.adaptive, args['n_prev_windows']
                 )
                 data.modify_data(

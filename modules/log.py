@@ -9,6 +9,9 @@ import sys
 ## CLASSES
 
 class Log():
+    '''
+    Logger.
+    '''
 
     def __init__(self):
         pass
