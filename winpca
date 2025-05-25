@@ -78,8 +78,10 @@ def main():
             gl_pl_min_var_per_w=args['gl_pl_min_var_per_w'],
             skip_monomorphic=args['skip_monomorphic'],
             gt_mean_impute=args['gt_mean_impute'],
+            proc_trail_trunc_w=args['proc_trail_trunc_w'],
             vcf_pass_filter=args['vcf_pass_filter'],
             min_maf=args['min_maf'],
+            x_mode=args['x_mode'],
             n_threads=args['n_threads'],
             )
 

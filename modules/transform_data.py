@@ -27,8 +27,8 @@ class Polarize:
     def adaptive(pc_df, n_prev_windows):
         '''
         Polarize a dataframe using the signs of the most frequent polarizer
-        (individual with largest absolute value) across n_prev_windows to inform
-        whether to flip the current window.
+        (individual with largest absolute value) across n_prev_windows to
+        inform whether to flip the current window.
         '''
 
         def is_positive(x):
@@ -85,7 +85,9 @@ class Polarize:
                 # get signs of previous windows and append 0 to pol_lst if a
                 # window has the same sign as the current window, else append 1
                 for i in range(1, len(polarizer_arr)):
-                    prev_win_pos = is_positive(polarizer_arr[i][prev_polarizer])
+                    prev_win_pos = is_positive(
+                        polarizer_arr[i][prev_polarizer]
+                    )
                     if prev_win_pos == win_pos:
                         pol_lst.append(0)
                     else:
@@ -135,14 +137,14 @@ class Polarize:
         Use fixed guide samples to polarize along a chromosome.
         '''
 
-        # list that will hold per-window flip instructions for each guide sample
+        # list that will hold per-window flip instructions per guide sample
         gs_flip_lst = []
 
         # for each guide_sample, get a list of pc values per window
         for gs in guide_sample_lst:
             gs_window_lst =  list(pc_df[[gs]][gs])
 
-            # first window has no reference/prev_window --> If second window is ### REVIEW LOGIC
+            # first window has no reference/prev_window --> If second window is
             # None set prev_window window to 0 for numerical comparison
             flip = [0]
             prev_window = \

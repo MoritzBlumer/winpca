@@ -34,11 +34,12 @@ PLOT_INTERVAL = 5         # plot only every nth value (5th if specifying 5)
 # pca
 PC_A = 1                  # first PC to output
 PC_B = 2                  # second PC to output
-N_PCS = 3                 # # of PCs (must be >=PC_A/PC_B; sets '-e' in PCAngsd)
-GT_MIN_VAR_PER_W = 20     # min # of variants per window, otherwise empty output
-GL_PL_MIN_VAR_PER_W = 100 # min # of variants per window, otherwise empty output
+N_PCS = 2                 # # of PCs (must be >=PC_A/PC_B; sets PCAngsd '-e')
+GT_MIN_VAR_PER_W = 10     # min # of variants per window
+GL_PL_MIN_VAR_PER_W = 100 # min # of variants per window
 SKIP_MONOMORPHIC = True   # skip invariant sites
 GT_MEAN_IMPUTE = True     # mean-impute missing genotypes (check documentation)
+PROC_TRAIL_TRUNC_W = True # process truncated trailing window if variants left
 
 # polarize
 N_PREV_WINDOWS = 5        # # of previous windows to consider for polarization

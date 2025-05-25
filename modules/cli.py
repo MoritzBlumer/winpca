@@ -143,6 +143,12 @@ class CLI:
             '--np', dest='no_pass_filter',
             required=False, action='store_true', default=False,
             help='disable VCF PASS filter (overrides modules/config.py)')
+        pca_parser.add_argument(
+            '--x', dest='x_mode',
+            required=False, action='store_true', default=False,
+            help='use SNP count (not bp) for window size (-w) and increment'
+              ' (-i); this automatically activates mean imputation and'
+              ' disables MAF filter')
 
 
     def polarize(self):
@@ -249,8 +255,8 @@ class CLI:
             '-m', '--metadata', dest='metadata_path', metavar='\b',
             required=False, type=str, default=None,
             help=f'{self.tab}path to metadata TSV; first column must contain'
-              ' sample IDs, all other columns are used to annotate data in HTML'
-              ' plot')
+              ' sample IDs, all other columns are used to annotate data in'
+              ' HTML plot')
         chromplot_parser.add_argument(
             '-g', '--groups', dest='color_by', metavar='\b',
             required=False, type=str, default=None,
@@ -307,8 +313,8 @@ class CLI:
             dest='run_ids', metavar='<RUN_IDS>',
             type=str, default=None,
             help=f'comma-separated list of run IDs to include, format: e.g.'
-              ' {prefix}.{run_id}.pc_1.tsv.gz; also used to determine plotting;'
-              ' order')
+              ' {prefix}.{run_id}.pc_1.tsv.gz; also used to determine'
+              ' plotting order')
 
         # positional arguments
         genomeplot_parser.add_argument(
@@ -322,8 +328,8 @@ class CLI:
             '-m', '--metadata', dest='metadata_path', metavar='\b',
             required=False, type=str, default=None,
             help=f'{self.tab}path to metadata TSV; first column must contain'
-              ' sample IDs, all other columns are used to annotate data in HTML'
-              ' plot')
+              ' sample IDs, all other columns are used to annotate data in'
+              ' HTML plot')
         genomeplot_parser.add_argument(
             '-g', '--groups', dest='color_by', metavar='\b',
             required=False, type=str, default=None,
@@ -416,7 +422,8 @@ class CLI:
 
         # region --> chrom, start, end
         if self.args.get('region'):
-            if ':' not in self.args['region'] or '-' not in self.args['region']:
+            if ':' not in self.args['region'] \
+                or '-' not in self.args['region']:
                 log.error_nl(
                     f'REGION: {self.args["region"]} is formatted incorrectly,'
                      ' please make sure to specify genomic coordinates:'
@@ -447,7 +454,8 @@ class CLI:
                             self.args['sample_lst'].append(
                                 line.strip().split('\t')[0]
                             )
-            if len(set(self.args['sample_lst'])) < len(self.args['sample_lst']):
+            if len(set(self.args['sample_lst'])) \
+                < len(self.args['sample_lst']):
                 seen, dups = set(), set()
                 for id in self.args['sample_lst']:
                     dups.add(id) if id in seen else seen.add(id)
@@ -516,6 +524,7 @@ class CLI:
                         f'-f/--format: {fmt} is not supported as output format'
                     )
 
+        # run_ids
         if self.args.get('run_ids'):
             if ',' not in self.args['run_ids']:
                 log.error_nl(
@@ -539,6 +548,7 @@ class CLI:
         self.args['gl_pl_min_var_per_w'] = int(config.GL_PL_MIN_VAR_PER_W)
         self.args['n_prev_windows'] = int(config.N_PREV_WINDOWS)
         self.args['gt_mean_impute'] = bool(config.GT_MEAN_IMPUTE)
+        self.args['proc_trail_trunc_w'] = bool(config.PROC_TRAIL_TRUNC_W)
         self.args['n_pcs'] = str(config.N_PCS)
         self.args['pc_a'] = str(config.PC_A)
         self.args['pc_b'] = str(config.PC_B)
@@ -555,14 +565,19 @@ class CLI:
         else:
             self.args['vcf_pass_filter'] = bool(config.VCF_PASS_FILTER)
 
-        # check if N_PCS is at larger than PC_1 and PC_2 setting or 0 if GL/PL
+        # check if N_PCS is at larger than PC_A and PC_B setting or 0 if GL/PL
         if self.args.get('var_fmt'):
-            if not ((int(config.PC_A) < int(config.PC_B) <= int(config.N_PCS)) \
-                or int(config.N_PCS) == 0 and (self.args['var_fmt'] in ['GL', 'PL'])):
-                            log.error_nl(
-                                'modules/config.py: N_PCS must be >= PC_A/PC_B ' \
-                                ' setting'
-                            )
+            if not (
+                (int(config.PC_A) < int(config.PC_B) <= int(config.N_PCS))
+                or (
+                    int(config.N_PCS) == 0
+                    and (self.args['var_fmt'] in ['GL', 'PL'])
+                )
+            ):
+                log.error_nl(
+                    'modules/config.py: N_PCS must be >='
+                    ' PC_A/PC_B setting'
+                )
 
         # check if specified PC exists in data if requested
         if self.args.get('pol_pc'):
@@ -572,3 +587,12 @@ class CLI:
                     f'-c/--principal_component: no data found for PC'
                     f' {self.args["pol_pc"]}'
                 )
+
+        # --x --> disable MAF filter and turn on mean imputation
+        if self.args.get('x_mode'):
+            self.args['min_maf'] = None
+            self.args['gt_mean_impute'] = True
+            log.newline()
+            log.info(
+                '--x mode: mean imputation active and MAF filter disabled'
+            )

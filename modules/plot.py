@@ -213,7 +213,10 @@ class Plot:
             # replace None (pandas) with np.nan (numpy), else through an error
             try:
                 val_lst = np.array(
-                    [np.nan if x in self.na_lst else x for x in self.group_lst],
+                    [
+                        np.nan if x in self.na_lst else x 
+                        for x in self.group_lst
+                    ],
                     dtype=np.float64
                 )
             except:
@@ -341,7 +344,8 @@ class Plot:
 
         # derive sub_dfs that contain no NaN stretches
         stat_sub_dfs = [
-            sub_df for _, sub_df in self.stat_df[split_mask].groupby(group_srs)]
+            sub_df for _, sub_df in self.stat_df[split_mask].groupby(group_srs)
+        ]
 
         # only show first trace as legend item
         add_legend_item = True
@@ -405,7 +409,10 @@ class Plot:
                 # compile hover text string for each window
                 hover_data = [
                     ''.join(
-                        [f'<b>{c}</b>: {row[c]}<br>' for c in sample_df.columns]
+                        [
+                            f'<b>{c}</b>: {row[c]}<br>'
+                            for c in sample_df.columns
+                        ]
                     ) for i, row in sample_df.iterrows()
                 ]
 
@@ -551,7 +558,11 @@ class Plot:
         for run_id in self.run_id_lst:
 
             # load data
-            self.data = WPCAData(self.run_prefix + run_id, self.pc_a, self.pc_b)
+            self.data = WPCAData(
+                f'{self.run_prefix}{run_id}',
+                self.pc_a,
+                self.pc_b,
+            )
             self.data_df = getattr(self.data, self.plot_df)
 
             # subset if interval (-i) is specified
@@ -610,7 +621,10 @@ class Plot:
                 # compile hover text string for each window
                 hover_data = [
                     ''.join(
-                        [f'<b>{c}</b>: {row[c]}<br>' for c in sample_df.columns]
+                        [
+                            f'<b>{c}</b>: {row[c]}<br>'
+                            for c in sample_df.columns
+                        ]
                     ) for i, row in sample_df.iterrows()
                 ]
 

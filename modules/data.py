@@ -111,7 +111,8 @@ class WPCAData:
         log.info(f'Reading data from prefix "{self.prefix}*"')
 
         # flush existing instance variables
-        self.pc_a_df, self.pc_b_df, self.hetp_df, self.miss_df, self.stat_df = \
+        self.pc_a_df, self.pc_b_df, \
+            self.hetp_df, self.miss_df, self.stat_df = \
             None, None, None, None, None
 
         # pc_a
@@ -158,8 +159,10 @@ class WPCAData:
 
         # create output directory if prefix contains '/'
         if '/' in self.prefix:
-            if not os.path.exists('/'.join(self.prefix.split('/')[0:-1]) + '/'):
-                os.makedirs('/'.join(self.prefix.split('/')[0:-1]) + '/')
+            if not os.path.exists(
+                f'{"/".join(self.prefix.split('/')[0:-1])}/'
+            ):
+                os.makedirs(f'"/".join(self.prefix.split('/')[0:-1])/')
 
         # pc_a
         self.pc_a_df = self.pc_a_df.round(3)
