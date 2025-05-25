@@ -31,8 +31,6 @@ class Plot:
                  stat_var=None,
                  prefix=None,
                  data=None,
-                 pc_a=None,
-                 pc_b=None,
                  chrom=None,
                  start=None,
                  end=None,
@@ -56,8 +54,6 @@ class Plot:
         self.stat_var = stat_var
         self.prefix = prefix
         self.data = data
-        self.pc_a = pc_a
-        self.pc_b = pc_b
         self.chrom = chrom
         self.start = start
         self.end = end
@@ -83,21 +79,17 @@ class Plot:
         self.group_lst = None
         self.color_dct = None
         self.fig = None
-        self.plot_pc = None
 
         # reformat plot_var and set display name
         if self.plot_var == 'hetp':
-            self.plot_df = 'hetp_df'
+            #self.df_name = 'hetp_df'
             self.plot_var_disp = 'SNP Heterozygosity'
         elif self.plot_var == 'miss':
-            self.plot_df = 'miss_df'
+            #self.df_name = 'miss_df'
             self.plot_var_disp = 'Missingness'
         else:
-            pc = 'a' if str(self.plot_var) == str(self.pc_a) else 'b'
-            self.plot_pc = self.plot_var
-            self.plot_var =  f'pc_{pc}'
-            self.plot_df = f'pc_{pc}_df'
-            self.plot_var_disp = f'PC {self.plot_pc}'
+            self.plot_var_disp = f'PC {self.plot_var}'
+            self.plot_var =  f'pc_{self.plot_var}'
         stat_var = f'{stat_var}_df'
 
         # define custom color scale
@@ -290,15 +282,11 @@ class Plot:
         '''
         Save figure in HTML and/or other (PDF, SVG, PNG) format(s).
         '''
-        if self.plot_var in ['hetp', 'miss']:
-            filename = self.plot_var
-        else:
-            filename = f'pc_{self.plot_pc}'
         for fmt in self.plot_fmt_lst:
             if fmt == 'html':
-                self.fig.write_html(f'{self.prefix}.{filename}.{fmt}')
+                self.fig.write_html(f'{self.prefix}.{self.plot_var}.{fmt}')
             else:
-                self.fig.write_image(f'{self.prefix}.{filename}.{fmt}')
+                self.fig.write_image(f'{self.prefix}.{self.plot_var}.{fmt}')
 
 
     def chromplot(self):
@@ -310,7 +298,7 @@ class Plot:
         # LOAD & PREPARE DATA
 
         # load data
-        self.data_df = getattr(self.data, self.plot_df)
+        self.data_df = getattr(self.data, f'{self.plot_var}_df')
         self.stat_df = getattr(self.data, 'stat_df')
 
         # subset if interval (-i) is specified
@@ -336,9 +324,15 @@ class Plot:
         # TOP PANEL
 
         # parse display name for top panel: variance explained or n of sites
-        display_name = \
-            '% heterozygous sites' if self.stat_var == 'hetp_df' else \
-            '% variance explained'                                              ## CHECK BACK
+        if self.stat_var == 'n_var':
+            display_name = 'Variants per window'
+            unit = ''
+        elif self.stat_var == 'w_size':
+            display_name = 'Window size'
+            unit = ' bp'
+        else:
+            display_name = '% variance explained'
+            unit = '%'
 
         # create mask of stretches of None
         split_mask = self.stat_df[[self.stat_var]].notna().all(axis=1)
@@ -358,10 +352,11 @@ class Plot:
         for sub_df in stat_sub_dfs:
 
             # compile per-window hover data strings
+
             hover_data = [
                 ''.join(
                     [f'<b>pos</b>: {str(idx)}<br><b>{display_name}</b>: \
-                    <b>{row[self.stat_var]}%<br>' ]
+                    <b>{row[self.stat_var]}{unit}<br>' ]
                 ) for idx, row in sub_df.iterrows()
             ]
 
@@ -565,10 +560,9 @@ class Plot:
             # load data
             self.data = WPCAData(
                 f'{self.run_prefix}{run_id}',
-                self.pc_a,
-                self.pc_b,
+                self.pcs,
             )
-            self.data_df = getattr(self.data, self.plot_df)
+            self.data_df = getattr(self.data, f'{self.plot_var}_df')
 
             # subset if interval (-i) is specified
             if self.interval:

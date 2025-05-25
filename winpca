@@ -62,13 +62,12 @@ def main():
         # load module & instantiate
         from modules.windowed_pca import WPCA
         wpca = WPCA(
-            variant_file_path = args['variant_file_path'],
+            variant_file_path=args['variant_file_path'],
             file_fmt=file_fmt,
             var_fmt=args['var_fmt'],
-            sample_lst=args['sample_lst'],
+            pcs = args['pcs'],
             n_pcs = args['n_pcs'],
-            pc_a = args['pc_a'],
-            pc_b = args['pc_b'],
+            sample_lst=args['sample_lst'],
             chrom=args['chrom'],
             start=args['start'],
             stop=args['end'],
@@ -89,8 +88,7 @@ def main():
         wpca.window_parser()
         data = WPCAData(
             args['prefix'],
-            args['pc_a'],
-            args['pc_b'],
+            args['pcs'],
             wpca,
         )
 
@@ -102,8 +100,7 @@ def main():
         # read data
         data = WPCAData(
             args['prefix'],
-            args['pc_a'],
-            args['pc_b'],
+            args['pcs'],
         )
 
 
@@ -122,46 +119,30 @@ def main():
 
         # adaptive
         if args['polarize'] == 'auto':
-            if args['pol_pc'] == 'both':
+            for pc in args['pol_pcs']:
                 data.modify_data(                                              # pylint: disable=E0606      
-                    'pc_a_df', polarize.adaptive, args['n_prev_windows']
-                )
-                data.modify_data(
-                    'pc_b_df', polarize.adaptive, args['n_prev_windows']
-                )
-            else:
-                pol_pc = 'a' if args['pol_pc'] == args['pc_a'] else 'b'
-                data.modify_data(
-                    f'pc_{pol_pc}_df', polarize.adaptive, \
-                        args['n_prev_windows']
+                    f'pc_{pc}_df', polarize.adaptive, args['n_prev_windows']
                 )
 
         # using guide samples
         if args['polarize'] == 'guide_samples':
 
             # check if guide samples exist
-            if not set(args['guide_sample_lst']).issubset(data.pc_a_df.columns):
+            check_df = getattr(data, f'pc_{args['pol_pcs'][0]}_df')
+            if not set(args['guide_sample_lst']).issubset(check_df.columns):
                 missing_lst = \
-                    set(args['guide_sample_lst']) - set(data.pc_a_df.columns)
+                    set(args['guide_sample_lst']) - set(check_df.columns)
                 data.to_files()
                 log.error_nl(
                     f'-g/--guide_samples: {", ".join(missing_lst)} not found,'
                      ' writing unpolarized output instead'
                 )
 
-
-            if args['pol_pc'] == 'both':
+            for pc in args['pol_pcs']:
                 data.modify_data(
-                    'pc_a_df', polarize.guide_samples, args['guide_sample_lst']
-                )
-                data.modify_data(
-                    'pc_b_df', polarize.guide_samples, args['guide_sample_lst']
-                )
-            else:
-                pol_pc = 'a' if args['pol_pc'] == args['pc_a'] else 'b'
-                data.modify_data(
-                    f'pc_{pol_pc}_df', polarize.guide_samples, \
-                        args['guide_sample_lst']
+                    f'pc_{pc}_df',
+                    polarize.guide_samples,
+                    args['guide_sample_lst'],
                 )
 
 
@@ -179,33 +160,16 @@ def main():
 
         # reflect (entire)
         if args['reflect']:
-            if args['flip_pc'] == 'both':
+            for pc in args['flip_pcs']:
                 data.modify_data(
-                    'pc_a_df', flip.flip_chrom
-                )
-                data.modify_data(
-                    'pc_a_df', flip.flip_chrom
-                )
-            else:
-                flip_pc = 'a' if args['flip_pc'] == args['flip_pc'] else 'b'
-                data.modify_data(
-                    f'pc_{flip_pc}_df', flip.flip_chrom                         # ISSUE  – FIXED?
+                    f'pc_{pc}_df', flip.flip_chrom
                 )
 
         # flip specified windows
         if args['flip_windows']:
-            if args['flip_pc'] == 'both':
+            for pc in args['flip_pcs']:
                 data.modify_data(
-                    'pc_a_df', flip.flip_windows, args['flip_window_lst']
-                )
-                data.modify_data(
-                    'pc_a_df', flip.flip_windows, args['flip_window_lst']
-                )
-            else:
-                flip_pc = 'a' if args['flip_pc'] == args['flip_pc'] else 'b'
-                data.modify_data(
-                    f'pc_{flip_pc}_df', flip.flip_windows,                      # ISSUE  – FIXED?
-                    args['flip_window_lst']
+                    f'pc_{pc}_df', flip.flip_windows, args['flip_window_lst']
                 )
 
 
@@ -225,8 +189,11 @@ def main():
         log.info('Creating chromosome plot')
 
         # infer stat_var
-        if args['plot_var'] == 'hetp':                                      # ADD miss?
-            stat_var = 'n_var'
+        if args['plot_var'] == 'hetp':
+            if len(list(data.stat_df['n_var'])[:-1]) == 1:                
+                stat_var = 'n_var'
+            else:
+                stat_var = 'w_size'
         else:
             stat_var = f'pc_{args["plot_var"]}_ve'
 
@@ -236,8 +203,6 @@ def main():
                     stat_var=stat_var,
                     prefix=args['prefix'],
                     data=data,
-                    pc_a = args['pc_a'],
-                    pc_b = args['pc_b'],
                     chrom=args['chrom'],
                     start=args['start'],
                     end=args['end'],
@@ -266,8 +231,6 @@ def main():
         # load module & instantiate
         from modules.plot import Plot
         plot = Plot(args['plot_var'],
-                    pc_a = args['pc_a'],
-                    pc_b = args['pc_b'],
                     run_prefix=args['run_prefix'],
                     run_id_lst=args['run_id_lst'],
                     metadata_path=args['metadata_path'],

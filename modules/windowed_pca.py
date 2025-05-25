@@ -40,8 +40,9 @@ class WPCA:
                  variant_file_path,
                  file_fmt,
                  var_fmt,
+                 pcs,
+                 n_pcs,
                  sample_lst,
-                 n_pcs, pc_a, pc_b,
                  chrom, start, stop,
                  w_size, w_step,
                  gt_min_var_per_w,
@@ -59,10 +60,9 @@ class WPCA:
         self.variant_file_path = variant_file_path
         self.file_fmt = file_fmt
         self.var_fmt = var_fmt
+        self.pcs = pcs
+        self.n_pcs = n_pcs
         self.sample_lst = sample_lst
-        self.n_pcs = int(n_pcs)
-        self.pc_a = int(pc_a)
-        self.pc_b = int(pc_b)
         self.chrom = chrom
         self.start = start
         self.stop = stop
@@ -420,7 +420,7 @@ class WPCA:
             # pca
             pca = allel.pca(
                 self.w_gt_arr,
-                n_components=self.n_pcs,
+                n_components=10,
                 copy=True,
                 scaler='patterson',
                 ploidy=2,
@@ -429,32 +429,35 @@ class WPCA:
             # compile to output
             out = {
                 'pos': self.w_pos,
-                'pc_a': pca[0][:, self.pc_a-1],
-                'pc_b': pca[0][:, self.pc_b-1],
-                f'pc_{self.pc_a}_ve': round(
-                    pca[1].explained_variance_ratio_[self.pc_a-1]*100, 2
-                ),
-                f'pc_{self.pc_b}_ve': round(
-                    pca[1].explained_variance_ratio_[self.pc_b-1]*100, 2
-                ),
+                'w_start': self.w_start,
+                'w_stop': self.w_stop,
+                'w_size': self.w_stop - self.w_start,
                 'hetp': hetp_lst,
                 'n_miss': n_miss_arr,
                 'n_var': n_var
             }
+            for i in range(1, 11):
+                out[f'pc_{i}'] = pca[0][:, i-1]
+                out[f'pc_{i}_ve'] = round(
+                    pca[1].explained_variance_ratio_[i-1]*100, 2
+                )
 
         # else create empty output & print info
         else:
             empty_lst = [None] * self.w_gt_arr.shape[1]
             out = {
                 'pos': self.w_pos,
-                'pc_a': empty_lst,
-                'pc_b': empty_lst,
-                f'pc_{self.pc_a}_ve': None,
-                f'pc_{self.pc_b}_ve': None,
+                'w_start': self.w_start,
+                'w_stop': self.w_stop,
+                'w_size': self.w_stop - self.w_start,
                 'hetp': empty_lst,
                 'n_miss': empty_lst,
                 'n_var': n_var
             }
+            for i in range(1, 11):
+                out[f'pc_{i}'] = empty_lst
+                out[f'pc_{i}_ve'] = None
+
             log.info('Skipped window'
                      f' {self.w_start}-{self.w_start + self.w_size-1} with'
                      f' {n_var} variants (theshold: {self.gt_min_var_per_w}'
@@ -508,28 +511,33 @@ class WPCA:
 
             out = {
                 'pos': self.w_pos,
-                'pc_a': eigenvec_arr[:, self.pc_a-1],
-                'pc_b': eigenvec_arr[:, self.pc_b-1],
-                f'pc_{self.pc_a}_ve': round(pct_exp_arr[self.pc_a-1], 2),
-                f'pc_{self.pc_b}_ve': round(pct_exp_arr[self.pc_b-1], 2),
+                'w_start': self.w_start,
+                'w_stop': self.w_stop,
+                'w_size': self.w_stop - self.w_start,
                 'hetp': [None for x in eigenvec_arr[:, 0]],
                 'n_miss': [None for x in eigenvec_arr[:, 0]],
-                'n_var': n_var,
+                'n_var': n_var
             }
+            for i in range(1, 11):
+                out[f'pc_{i}'] = eigenvec_arr[:, i-1]
+                out[f'pc_{i}_ve'] = round(pct_exp_arr[i-1], 2)
 
         # else create empty output
         else:
             empty_lst = [None] * (self.w_gl_arr.shape[1]//2)
             out = {
                 'pos': self.w_pos,
-                'pc_a': empty_lst,
-                'pc_b': empty_lst,
-                f'pc_{self.pc_a}_ve': None,
-                f'pc_{self.pc_b}_ve': None,
+                'w_start': self.w_start,
+                'w_stop': self.w_stop,
+                'w_size': self.w_stop - self.w_start,
                 'hetp': empty_lst,
-                'n_miss': empty_lst,
-                'n_var': n_var,
+                'n_miss':empty_lst,
+                'n_var': n_var
             }
+            for i in range(1, 11):
+                out[f'pc_{i}'] = empty_lst
+                out[f'pc_{i}_ve'] = None
+
             log.info('Skipped window'
                      f' {self.w_start}-{self.w_start + self.w_size-1} with'
                      f' {n_var} variants (theshold: {self.gl_pl_min_var_per_w}'
@@ -729,7 +737,6 @@ class WPCA:
                         else:
                             if self.parse_variant(self.gl_process_win, gls):
                                 break
-
 
             # PL
             if self.var_fmt == 'PL':

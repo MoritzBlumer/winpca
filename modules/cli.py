@@ -120,8 +120,8 @@ class CLI:
             '-p', '--polarize', dest='polarize', metavar='\b',
             required=False, type=str, default=str(config.POL_MODE),
             choices=['auto', 'guide_samples', 'skip'],
-            help=f'{self.tab}sign polarization strategy: auto,guide_samples or'
-             f' skip [{config.POL_MODE}]')
+            help=f'{self.tab}sign polarization strategy: auto, guide_samples'
+             f' or skip [{config.POL_MODE}]')
         pca_parser.add_argument(
             '-g', '--guide_samples', dest='guide_samples', metavar='\b',
             required=False, type=str, default=None,
@@ -147,8 +147,8 @@ class CLI:
             '--x', dest='x_mode',
             required=False, action='store_true', default=False,
             help='use SNP count (not bp) for window size (-w) and increment'
-              ' (-i); this automatically activates mean imputation and'
-              ' disables MAF filter')
+              ' (-i); automatically activates mean imputation and disables'
+              ' MAF filter')
 
 
     def polarize(self):
@@ -160,7 +160,6 @@ class CLI:
         polarize_parser = self.subparsers.add_parser(
             'polarize',
             help='(Re)-polarize windowed PC data from a previous run'
-              ' (overwrites input data)'
         )
 
         # positional arguments
@@ -168,23 +167,24 @@ class CLI:
 
         # optional arguments
         polarize_parser.add_argument(
-            '-c', '--principal_component', dest='pol_pc', metavar='\b',
-            required=False, type=str, default=str(config.POL_PC),
-            choices=[str(config.PC_A), str(config.PC_B), 'both'],
-            help='specify which PC to re-polarize (e.g. "1", "2" or "both")'
-             f' [{config.POL_PC}]')
-        polarize_parser.add_argument(
             '-p', '--polarize', dest='polarize', metavar='\b',
             required=False, type=str, default=str(config.POL_MODE),
             choices=['auto', 'guide_samples'],
-            help=f'{self.tab}sign polarization strategy ("auto" or'
-             ' "guide_samples") [{config.POL_MODE}]')
+            help=f'{self.tab}sign polarization strategy: auto or'
+             f' guide_samples [{config.POL_MODE}]')
         polarize_parser.add_argument(
             '-g', '--guide_samples', dest='guide_samples', metavar='\b',
             required=False, type=str, default=None,
-            help='one or more (comma-separated) samples to guide PC'
+            help='comma-separated list of one or more samples to guide PC'
               ' polarization (used only if "guide_samples" is selected for'
               ' -p/--polarize)')
+        polarize_parser.add_argument(
+            '-c', '--components', dest='pol_pcs', metavar='\b',
+            required=False, type=str,
+            default=','.join(str(x) for x in config.PCS),
+            help=f'{self.tab}comma-separated list of principal components to'
+             f' polarize [{','.join(str(x) for x in config.PCS)}]')
+
 
     def flip(self):
         '''
@@ -217,11 +217,11 @@ class CLI:
               ' windows (--r/--reflect is applied independently from'
               ' -w/--windows and they can be used together')
         flip_parser.add_argument(
-            '-c', '--principal_component', dest='flip_pc', metavar='\b',
-            required=False, type=str, default=str(config.FLIP_PC),
-            choices=[str(config.PC_A), str(config.PC_B), 'both'],
-            help='specify which PC to flip (e.g. "1", "2" or "both")'
-             f' [{config.FLIP_PC}]')
+            '-c', '--components', dest='flip_pcs', metavar='\b',
+            required=False, type=str,
+            default=str(config.PCS[0]),
+            help=f'{self.tab}principal components to flip (default: first PC)'
+             f' [{str(config.PCS[0])}]')
 
 
     def chromplot(self):
@@ -246,11 +246,10 @@ class CLI:
         # optional arguments
         chromplot_parser.add_argument(
             '-p', '--plot_variable', dest='plot_var', metavar='\b',
-            required=False, type=str, default=str(config.PC_A),
-            choices=[str(config.PC_A), str(config.PC_B), 'het'],
+            required=False, type=str, default=str(config.PCS[0]),
+            choices=[str(pc) for pc in config.PCS] + ['het'],
             help='specify what to plot, e.g. "1" for PC 1 or "het" for SNP'
-              ' heterozygosity (default: first specified PC)'
-             f' [{config.PC_A}]')
+             f' heterozygosity (default: first PC) [{config.PCS[0]}]')
         chromplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', metavar='\b',
             required=False, type=str, default=None,
@@ -276,9 +275,8 @@ class CLI:
         chromplot_parser.add_argument(
             '-f', '--format', dest='plot_fmt', metavar='\b',
             required=False, type=str, default=str(config.PLOT_FMT),
-            help=f'{self.tab}output plot file format ("HTML", "PDF", "SVG" or'
-             f' "PNG"); specify a single one or a comma-separated list'
-              ' [{config.PLOT_FMT}]')
+            help=f'{self.tab}output plot format: HTML, PDF, SVG or'
+             f' PNG (can be a comma-separated list)')
         chromplot_parser.add_argument(
             '--n', '--numeric', dest='numeric',
             required=False, action='store_true', default=False,
@@ -319,11 +317,10 @@ class CLI:
         # positional arguments
         genomeplot_parser.add_argument(
             '-p', '--plot_variable', dest='plot_var', metavar='\b',
-            required=False, type=str, default=str(config.PC_A),
-            choices=[str(config.PC_A), str(config.PC_B), 'het'],
+            required=False, type=str, default=str(config.PCS[0]),
+            choices=[str(pc) for pc in config.PCS] + ['het'],
             help='specify what to plot, e.g. "1" for PC 1 or "het" for SNP'
-              ' heterozygosity (default: first specified PC)'
-             f' [{config.PC_A}]')
+             f' heterozygosity (default: first PC) [{config.PCS[0]}]')
         genomeplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', metavar='\b',
             required=False, type=str, default=None,
@@ -349,9 +346,9 @@ class CLI:
         genomeplot_parser.add_argument(
             '-f', '--format', dest='plot_fmt', metavar='\b',
             required=False, type=str, default=str(config.PLOT_FMT),
-            help=f'{self.tab}output plot file format ("HTML", "PDF", "SVG" or'
-             f' "PNG"); specify a single one or a comma-separated list'
-              ' [{config.PLOT_FMT}]')
+            help=f'{self.tab}output plot format: HTML, PDF, SVG or'
+             f' PNG (can be a comma-separated list)'
+             f' [{config.PLOT_FMT}]')
         genomeplot_parser.add_argument(
             '--n', '--numeric', dest='numeric',
             required=False, action='store_true', default=False,
@@ -398,7 +395,6 @@ class CLI:
                  '-c/--colors: -g/--groups is required to set specify'
                  ' group-specificcolors'
             )
-
 
         # variant_file_path
         if self.args.get('variant_file_path'):
@@ -534,59 +530,58 @@ class CLI:
             else:
                 self.args['run_id_lst'] = self.args['run_ids'].split(',')
             for r_id in self.args['run_id_lst']:
+                first_pc = config.PCS[0]
                 path = \
-                    f'{self.args["run_prefix"]}{r_id}.pc_{config.PC_A}.tsv.gz'
+                    f'{self.args["run_prefix"]}{r_id}.pc_{first_pc}.tsv.gz'
                 if not os.path.exists(path):
                     log.error_nl(
                         f'RUN_PREFIX: {self.args["run_prefix"]}{r_id} does'
                          ' not exist or is incomplete'
                     )
 
+        # pol_pcs
+        if self.args.get('pol_pcs'):
+            self.args['pol_pcs'] = [
+                int(x) for x in self.args['pol_pcs'].split(',')
+            ]
+            for pc in self.args['pol_pcs']:
+                if pc not in config.PCS:
+                    log.error_nl(
+                        f'-c/--component: PC not found: {pc}'
+                    )
+
+        # flip_pcs
+        if self.args.get('flip_pcs'):
+            self.args['flip_pcs'] = [
+                int(x) for x in self.args['flip_pcs'].split(',')
+            ]
+            for pc in self.args['flip_pcs']:
+                if pc not in config.PCS:
+                    log.error_nl(
+                        f'-c/--component: PC not found: {pc}'
+                    )
+
         # add config settings
+        self.args['pcs'] = config.PCS
+        self.args['n_pcs'] = str(config.N_PCS)
         self.args['skip_monomorphic'] = bool(config.SKIP_MONOMORPHIC)
         self.args['gt_min_var_per_w'] = int(config.GT_MIN_VAR_PER_W)
         self.args['gl_pl_min_var_per_w'] = int(config.GL_PL_MIN_VAR_PER_W)
         self.args['n_prev_windows'] = int(config.N_PREV_WINDOWS)
         self.args['gt_mean_impute'] = bool(config.GT_MEAN_IMPUTE)
         self.args['proc_trail_trunc_w'] = bool(config.PROC_TRAIL_TRUNC_W)
-        self.args['n_pcs'] = str(config.N_PCS)
-        self.args['pc_a'] = str(config.PC_A)
-        self.args['pc_b'] = str(config.PC_B)
         self.args['chromplot_w'] = int(config.CHROMPLOT_W)
         self.args['chromplot_h'] = int(config.CHROMPLOT_H)
         self.args['genomeplot_w'] = int(config.GENOMEPLOT_W)
         self.args['genomeplot_h'] = int(config.GENOMEPLOT_H)
 
         # add default values from config if unset
-        if not self.args.get('pol_pc'):
-            self.args['pol_pc'] = str(config.POL_PC)
+        if not self.args.get('pol_pcs'):
+            self.args['pol_pcs'] = self.args['pcs']
         if self.args.get('no_pass_filter') is True:
             self.args['vcf_pass_filter'] = False
         else:
             self.args['vcf_pass_filter'] = bool(config.VCF_PASS_FILTER)
-
-        # check if N_PCS is at larger than PC_A and PC_B setting or 0 if GL/PL
-        if self.args.get('var_fmt'):
-            if not (
-                (int(config.PC_A) < int(config.PC_B) <= int(config.N_PCS))
-                or (
-                    int(config.N_PCS) == 0
-                    and (self.args['var_fmt'] in ['GL', 'PL'])
-                )
-            ):
-                log.error_nl(
-                    'modules/config.py: N_PCS must be >='
-                    ' PC_A/PC_B setting'
-                )
-
-        # check if specified PC exists in data if requested
-        if self.args.get('pol_pc'):
-            if self.args['pol_pc'] \
-                not in [self.args['pc_a'], self.args['pc_b'], 'both']:
-                log.error_nl(
-                    f'-c/--principal_component: no data found for PC'
-                    f' {self.args["pol_pc"]}'
-                )
 
         # --x --> disable MAF filter and turn on mean imputation
         if self.args.get('x_mode'):

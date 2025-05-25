@@ -12,15 +12,10 @@ MIN_MAF = 0.01            # minor allele frequency threshold per window
 W_SIZE = 1000000          # window size in bp
 W_STEP = 10000            # step size in bp
 N_THREADS = 2             # # of threads – only affects PCAngsd
-VCF_PASS_FILTER = True    # include only sites where FILTER is set to PASS
-
+VCF_PASS_FILTER = True    # include only PASS sites (disable with --np)
 
 # winpca polarize
 POL_MODE = 'auto'         # polarization mode ('auto' or 'guide_samples')
-POL_PC = 'both'           # which PC to polarize (e.g. '1', '2' or 'both')
-
-# winpca flip
-FLIP_PC = 1               # which PC to modify (e.g. '1', '2'; or 'both')
 
 # chromplot + genomeplot
 PLOT_FMT = 'HTML'         # output  format (one of 'HTML', 'PDF', 'SVG', 'PNG)
@@ -32,9 +27,8 @@ PLOT_INTERVAL = 5         # plot only every nth value (5th if specifying 5)
 #  (these can only be changed here, i.e. no CLI arguments)
 
 # pca
-PC_A = 1                  # first PC to output
-PC_B = 2                  # second PC to output
-N_PCS = 2                 # # of PCs (must be >=PC_A/PC_B; sets PCAngsd '-e')
+PCS = [1, 2, 3]           # PCs to output
+N_PCS = 2                 # sets PCAngsd '-eig' parameter (should be >= PCS)
 GT_MIN_VAR_PER_W = 10     # min # of variants per window
 GL_PL_MIN_VAR_PER_W = 100 # min # of variants per window
 SKIP_MONOMORPHIC = True   # skip invariant sites
