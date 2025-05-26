@@ -30,7 +30,7 @@ class CLI:
 
         # initiate argument parser
         self.parser = argparse.ArgumentParser(
-            description='WinPCA v1.0',
+            description=f'WinPCA {__version__}',
             epilog='contact: lmb215@cam.ac.uk',
             formatter_class=argparse.RawDescriptionHelpFormatter
         )
@@ -434,6 +434,28 @@ class CLI:
                 self.args['end'] = \
                     int(self.args['region'].split(':')[1].split('-')[1])
 
+
+        # w_size
+        if self.args.get('w_size'):
+            if self.args['var_fmt'] == 'GT' \
+                and self.args['w_size'] < config.GT_MIN_VAR_PER_W:
+                    log.error_nl(
+                           '-w/--w_size: window size (currently:'
+                          f' {self.args["w_size"]}) must be >='
+                          f' GT_MIN_VAR_PER_W (--> modules/config.py,'
+                          f' currently: {config.GT_MIN_VAR_PER_W}),'
+                           ' please change one accordingly'
+                    )                
+            elif self.args['var_fmt'] in ['GL', 'PL'] \
+                and self.args['w_size'] < config.GL_PL_MIN_VAR_PER_W:
+                    log.error_nl(
+                           '-w/--w_size: window size (currently:'
+                          f' {self.args["w_size"]}) must be >='
+                          f' GL_PL_MIN_VAR_PER_W (--> modules/config.py,'
+                          f' currently: {config.GL_PL_MIN_VAR_PER_W}),'
+                           ' please change one accordingly'
+                    )        
+
         # samples --> sample_lst
         if self.args.get('samples'):
             if ',' in self.args['samples']:
@@ -564,7 +586,7 @@ class CLI:
 
         # add config settings
         self.args['pcs'] = config.PCS
-        self.args['n_pcs'] = str(config.N_PCS)
+        self.args['n_pcs'] = int(config.N_PCS)
         self.args['skip_monomorphic'] = bool(config.SKIP_MONOMORPHIC)
         self.args['gt_min_var_per_w'] = int(config.GT_MIN_VAR_PER_W)
         self.args['gl_pl_min_var_per_w'] = int(config.GL_PL_MIN_VAR_PER_W)

@@ -279,7 +279,7 @@ class WPCA:
                      'version is recommended')
 
         # filter by minor allel frequency
-        if self.min_maf > 0.0:
+        if self.min_maf:
             min_maf_mask = (self.gl_min_maf_arr >= self.min_maf) \
                 & (self.gl_min_maf_arr <= (1 - self.min_maf))
 
@@ -794,8 +794,8 @@ class WPCA:
 
         # check if any windows were processed
         if len(self.out_dct) == 0:
-            log.error('No windows found. Please check if chromosome name was'
-            ' specified correctly')
+            log.error('No windows found. Please check if chromosome name and' \
+            ' variant format were specified correctly')
             log.newline()
 
         # print exit message
