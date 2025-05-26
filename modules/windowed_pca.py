@@ -613,7 +613,7 @@ class WPCA:
                 ]
                 if missing_sid_lst:
                     log.error_nl(
-                        f'-s/--samples: {','.join(missing_sid_lst)} not in'
+                        f'-s/--samples: {",".join(missing_sid_lst)} not in'
                         f' {self.variant_file_path}'
                     )
 
