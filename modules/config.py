@@ -37,12 +37,12 @@ GT_MEAN_IMPUTE = True      # mean-impute missing genotypes
 PROC_TRAIL_TRUNC_W = True  # process truncated trailing window if present
 
 # polarize
-N_PREV_WINDOWS = 50         # # of previous windows to use for polarization
+N_PREV_WINDOWS = 5         # # of previous windows to use for polarization
 
 # chromplot
 CHROMPLOT_W = 1200         # plot width in pixels
 CHROMPLOT_H = 500          # plot height in pixels
 
 # genomeplot
-GENOMEPLOT_W = 12000        # plot width in pixels
-GENOMEPLOT_H = 5000         # plot height in pixels
+GENOMEPLOT_W = 12000       # plot width in pixels
+GENOMEPLOT_H = 5000        # plot height in pixels
