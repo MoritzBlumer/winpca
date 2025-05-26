@@ -141,7 +141,7 @@ class WPCAData:
         # create output directory if prefix contains '/'
         if '/' in self.prefix:
             if not os.path.exists(
-                f'{"/".join(self.prefix.split('/')[0:-1])}/'
+                f'{"/".join(self.prefix.split("/")[0:-1])}/'
             ):
                 os.makedirs(f'{"/".join(self.prefix.split('/')[0:-1])}/')
 
