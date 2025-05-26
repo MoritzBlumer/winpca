@@ -508,7 +508,14 @@ class CLI:
                                 line.strip().split('\t')[0]
                             )
                 else:
-                    self.args['flip_window_lst'] = [self.args['flip_windows']]
+                    try:
+                        self.args['flip_window_lst'] = \
+                            [int(self.args['flip_windows'])]
+                    except:                                                    # pylint: disable=W0702
+                        log.error_nl(
+                            f'-w/--windows: {self.args["flip_windows"]}: file'
+                            ' does not exist'
+                        )
         else:
             self.args['flip_window_lst'] = None
 
