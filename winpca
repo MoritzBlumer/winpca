@@ -129,7 +129,7 @@ def main():
         if args['polarize'] == 'guide_samples':
 
             # check if guide samples exist
-            check_df = getattr(data, f'pc_{args['pol_pcs'][0]}_df')
+            check_df = getattr(data, f'pc_{args["pol_pcs"][0]}_df')
             if not set(args['guide_sample_lst']).issubset(check_df.columns):
                 missing_lst = \
                     set(args['guide_sample_lst']) - set(check_df.columns)
