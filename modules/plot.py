@@ -196,14 +196,15 @@ class Plot:
         self.group_id = self.color_by if not self.color_by is None else 'id'
 
         # check if group exist in metadata column names
-        if self.group_id not in self.metadata_df.columns:
+        if self.group_id != 'id' \
+            and self.group_id not in self.metadata_df.columns:
             log.error_nl(
                 f'-g/--groups: "{self.group_id}" is not the name of a column'
                  ' in the specified metadata file (-m/--metadata)'
             )
 
         # get list of groups/ids
-        self.group_lst = list(set(self.data_df[self.group_id]))
+        self.group_lst = sorted(set(self.data_df[self.group_id]))
 
         # set color_dct for continuous colors
         if self.numeric:
@@ -251,7 +252,6 @@ class Plot:
         # print error messages if HEX codes are missing for specified groups or
         # malformatted
         elif self.hex_code_dct:
-            #print(self.hex_code_dct.values()[0])
             self.color_dct = self.hex_code_dct
             if not all(x in self.color_dct.keys() for x in self.group_lst):
                 log.error_nl(
@@ -260,7 +260,7 @@ class Plot:
             elif not all(self.is_hex(x[1:]) for x in self.color_dct.values()) \
                 or not all(len(x) == 7 for x in self.color_dct.values()):
                 log.error_nl(
-                    '-c/--colors: HEX codes not formatted correctly – please'
+                    '-c/--colors: HEX codes not formatted correctly, please'
                     ' refer to the documentation')
             else:
                 # set color_dct keys as group_lst to set plotting order

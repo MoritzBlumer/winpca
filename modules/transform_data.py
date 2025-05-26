@@ -209,6 +209,7 @@ class Flip:
 
         # infer step size
         w_step = pc_df.index[1] - pc_df.index[0]
+        w_lst = list(pc_df.index)
 
         # iterate specified flip regions
         w_flip_lst = []
@@ -225,7 +226,8 @@ class Flip:
             if '-' in record:
                 start = int(record.split('-')[0])
                 end = int(record.split('-')[1])
-                w_flip_lst += list(range(start, end, w_step)) + [end]
+                w_flip_lst += [x for x in w_lst if start <= x <= end]
+                #w_flip_lst += list(range(start, end, w_step)) + [end]
             else:
                 w_flip_lst.append(record)
 
@@ -238,9 +240,9 @@ class Flip:
             if w not in pc_df.index:
                 missing_lst.append(w)
         if missing_lst:
-            log.error_nl('-w/--windows: he following windows are not'
-                       ' represented in the supplied data:'
-                      f' {",".join(missing_lst)}')
+            log.error_nl('-w/--windows: the following windows are not'
+                       ' in the supplied data:'
+                      f' {",".join(str(x) for x in missing_lst)}')
 
         # flip windows
         pc_df.loc[w_flip_lst] *= -1

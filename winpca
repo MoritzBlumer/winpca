@@ -68,6 +68,7 @@ def main():
             var_fmt=args['var_fmt'],
             pcs = args['pcs'],
             pcangsd_em_eig = args['pcangsd_em_eig'],
+            pcangsd_em_iter = args['pcangsd_em_iter'],
             sample_lst=args['sample_lst'],
             chrom=args['chrom'],
             start=args['start'],
@@ -191,10 +192,10 @@ def main():
 
         # infer stat_var
         if args['plot_var'] == 'hetp':
-            if len(list(data.stat_df['n_var'])[:-1]) == 1:
-                stat_var = 'n_var'
-            else:
+            if len(set(data.stat_df['n_var'][:-1])) == 1:
                 stat_var = 'w_size'
+            else:
+                stat_var = 'n_var'
         else:
             stat_var = f'pc_{args["plot_var"]}_ve'
 

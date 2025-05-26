@@ -42,6 +42,7 @@ class WPCA:
                  var_fmt,
                  pcs,
                  pcangsd_em_eig,
+                 pcangsd_em_iter,
                  sample_lst,
                  chrom, start, stop,
                  w_size, w_step,
@@ -62,6 +63,7 @@ class WPCA:
         self.var_fmt = var_fmt
         self.pcs = pcs
         self.pcangsd_em_eig = pcangsd_em_eig
+        self.pcangsd_em_iter = pcangsd_em_iter
         self.sample_lst = sample_lst
         self.chrom = chrom
         self.start = start
@@ -129,6 +131,7 @@ class WPCA:
         '''
         while self.pos > self.w_stop:
             process_func()
+            with open('post.txt', 'w') as f: print('\n'.join([str(x[0]) for x in self.win]), flush=True, file=f)
             self.init_win()
         if self.pos > self.stop:
             if (self.proc_trail_trunc_w
@@ -178,6 +181,21 @@ class WPCA:
         log.info(f'Processed {self.w_idx}/{self.n_windows} windows')
 
 
+    def init_win_x(self):
+        '''
+        Initialize new window by shifting one w_step and dropping obsolete
+        variants from previous window
+        '''
+
+        self.w_idx += 1
+        self.win = self.win[self.w_step:]
+
+        pct_complete = round((self.pos-self.start)/(self.stop-self.start)*100)
+        if pct_complete > self.pct_complete and pct_complete % 10 == 0:
+            self.pct_complete = pct_complete
+            log.info(f'Processed {self.pct_complete}%')
+
+
     def gt_mean_imputation(self):
         '''
         Mean impute missing GT calls
@@ -193,21 +211,6 @@ class WPCA:
         self.w_gt_arr[miss_mask_arr] = np.take(
             row_mean_arr, np.where(miss_mask_arr)[0]
         )
-
-
-    def init_win_x(self):
-        '''
-        Initialize new window by shifting one w_step and dropping obsolete
-        variants from previous window
-        '''
-
-        self.w_idx += 1
-        self.win = self.win[self.w_step:]
-
-        pct_complete = round((self.pos/self.stop)*100)
-        if pct_complete > self.pct_complete and pct_complete % 10 == 0:
-            self.pct_complete = pct_complete
-            log.info(f'Processed {self.pct_complete}%')
 
 
     def gt_drop_missing_sites(self):
@@ -493,13 +496,17 @@ class WPCA:
                 cov_arr, _, _, _, _ = emPCA(
                     self.w_gl_arr,
                     self.gl_min_maf_arr,
-                    self.pcangsd_em_eig, 100, 1e-5,
+                    self.pcangsd_em_eig,
+                    self.pcangsd_em_iter,
+                    1e-5,
                 )
             except:                                                            # pylint: disable=W0702
                 cov_arr, _, _, _, _ = emPCA(                                   # pylint: disable=E1121
                     self.w_gl_arr,
                     self.gl_min_maf_arr,
-                    self.pcangsd_em_eig, 100, 1e-5,
+                    self.pcangsd_em_eig,
+                    self.pcangsd_em_iter,
+                    1e-5,
                     self.n_threads
                 )
 
@@ -644,16 +651,20 @@ class WPCA:
             if self.var_fmt == 'GT':
 
                 if self.file_fmt == 'VCF':
-
+                    f = open('pre.txt', 'w')                                   ## DELETE
+                    m = open('mon.txt', 'w')                                   ## DELETE
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
                         if q_chrom != self.chrom:
                             continue
+                        self.pos = int(line[1])
+                        if self.pos < self.start:
+                            continue
+                        f.write(f'{self.pos}\n')                                ## DELETE
                         filter_field = line[6]
                         if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
-                        self.pos = int(line[1])
                         gts = [
                             line[9:][idx].split(':')[0] \
                                 for idx in sample_idx_lst
@@ -661,6 +672,7 @@ class WPCA:
                         gts = [self.gt_code_dct[x] for x in gts]
                         if self.skip_monomorphic \
                             and len(set(gts)-{np.nan}) == 1:
+                            m.write(f'{self.pos}\n')                            ## DELETE
                             continue
                         if self.x_mode:
                             if self.parse_variant_x(self.gt_process_win, gts):
@@ -668,7 +680,8 @@ class WPCA:
                         else:
                             if self.parse_variant(self.gt_process_win, gts):
                                 break
-
+                    f.close()                                                  ## DELETE
+                    m.close()                                                  ## DELETE
                 if self.file_fmt == 'TSV':
                     for line in variant_file:
                         line = line.strip().split('\t')
@@ -676,6 +689,8 @@ class WPCA:
                         if q_chrom != self.chrom:
                             continue
                         self.pos = int(line[1])
+                        if self.pos < self.start:
+                            continue
                         gts = [line[2:][idx] for idx in sample_idx_lst]
                         if self.skip_monomorphic \
                             and len(set(gts)-{np.nan}) == 1:
@@ -696,13 +711,15 @@ class WPCA:
                         q_chrom = line[0]
                         if q_chrom != self.chrom:
                             continue
+                        self.pos = int(line[1])
+                        if self.pos < self.start:
+                            continue
                         format_field = line[8].split(':')
                         if not self.var_fmt in format_field:
                             continue
                         filter_field = line[6]
                         if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
-                        self.pos = int(line[1])
                         gt_fields = line[9:]
                         # get each sample's GL field as a list
                         gls = [
@@ -735,6 +752,8 @@ class WPCA:
                         if q_chrom != self.chrom:
                             continue
                         self.pos = int(line[1])
+                        if self.pos < self.start:
+                            continue
                         gls = [line[2:][idx] for idx in sample_idx_lst]
                         if self.x_mode:
                             if self.parse_variant_x(self.gl_process_win, gls):
@@ -750,6 +769,8 @@ class WPCA:
                         if q_chrom != self.chrom:
                             continue
                         self.pos = int(line[0].rsplit('_', 1)[1])
+                        if self.pos < self.start:
+                            continue
                         gls = [line[3:][idx] for idx in sample_idx_lst]
                         if self.x_mode:
                             if self.parse_variant_x(self.gl_process_win, gls):
@@ -767,10 +788,12 @@ class WPCA:
                         q_chrom = line[0]
                         if q_chrom != self.chrom:
                             continue
+                        self.pos = int(line[1])
+                        if self.pos < self.start:
+                            continue
                         format_field = line[8].split(':')
                         if not self.var_fmt in format_field:
                             continue
-                        self.pos = int(line[1])
                         filter_field = line[6]
                         if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
@@ -804,6 +827,8 @@ class WPCA:
                         if q_chrom != self.chrom:
                             continue
                         self.pos = int(line[1])
+                        if self.pos < self.start:
+                            continue
                         pls = [line[2:][idx] for idx in sample_idx_lst]
                         if self.x_mode:
                             if self.parse_variant_x(self.pl_process_win, pls):
@@ -814,7 +839,7 @@ class WPCA:
         
         # check if any windows were processed
         if len(self.out_dct) == 0:
-            log.error(
+            log.error_nl(
                 'No windows found. Please check if chromosome name and' 
                 ' variant format were specified correctly'
             )
@@ -823,13 +848,13 @@ class WPCA:
         # print error if only one window was processed
         if len(self.out_dct) == 1:
             if self.x_mode:
-                log.error(
+                log.error_nl(
                     '-w/--window_size and --x: window size is interpreted as'
                     ' SNP count in --x mode, consider decreasing window size'
                 )
                 log.newline()
             else:
-                log.error(
+                log.error_nl(
                     '-w/--window_size: Not enough variants to fill more than'
                     ' one window, consider decreasing window size'
                 )

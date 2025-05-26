@@ -29,19 +29,20 @@ PLOT_INTERVAL = 5          # plot only every nth value (5th if specifying 5)
 # pca
 PCS = [1, 2]               # PCs to output
 PCANGSD_EM_EIG = 2         # sets PCAngsd '-eig' parameter (should be >= PCS)
+PCANGSD_EM_ITER = 100      # max EM iterations to perform (0 --> ngsTools like)
 GT_MIN_VAR_PER_W = 20      # min # of variants per window
 GL_PL_MIN_VAR_PER_W = 100  # min # of variants per window
-SKIP_MONOMORPHIC = True    # skip invariant sites
+SKIP_MONOMORPHIC = True    # skip invariant sites (uninformative for PCA)
 GT_MEAN_IMPUTE = True      # mean-impute missing genotypes
 PROC_TRAIL_TRUNC_W = True  # process truncated trailing window if present
 
 # polarize
-N_PREV_WINDOWS = 5         # # of previous windows to use for polarization
+N_PREV_WINDOWS = 50         # # of previous windows to use for polarization
 
 # chromplot
 CHROMPLOT_W = 1200         # plot width in pixels
 CHROMPLOT_H = 500          # plot height in pixels
 
 # genomeplot
-GENOMEPLOT_W = 1200        # plot width in pixels
-GENOMEPLOT_H = 500         # plot height in pixels
+GENOMEPLOT_W = 12000        # plot width in pixels
+GENOMEPLOT_H = 5000         # plot height in pixels

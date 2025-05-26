@@ -205,17 +205,17 @@ class CLI:
 
         # optional arguments
         flip_parser.add_argument(
-            '-w', '--windows', dest='flip_windows', metavar='\b',
-            required=False, type=str, default=None,
-            help=f'{self.tab}comma-separated list of positions (e.g. 100000)'
-              ' and/or regions (e.g. 100000-250000) to flip OR file with one'
-              ' position/region per line')
-        flip_parser.add_argument(
             '--r', '--reflect', dest='reflect',
             required=False, action='store_true', default=None,
             help='set flag to reflect the entire chromosome, i.e. to flip all'
               ' windows (--r/--reflect is applied independently from'
               ' -w/--windows and they can be used together')
+        flip_parser.add_argument(
+            '-w', '--windows', dest='flip_windows', metavar='\b',
+            required=False, type=str, default=None,
+            help=f'{self.tab}comma-separated list of positions (e.g. 100000)'
+              ' and/or regions (e.g. 100000-250000) to flip OR file with one'
+              ' position/region per line')
         flip_parser.add_argument(
             '-c', '--components', dest='flip_pcs', metavar='\b',
             required=False, type=str,
@@ -245,11 +245,11 @@ class CLI:
 
         # optional arguments
         chromplot_parser.add_argument(
-            '-p', '--plot_variable', dest='plot_var', metavar='\b',
+            '-p', '--plot_var', dest='plot_var', metavar='\b',
             required=False, type=str, default=str(config.PCS[0]),
             choices=[str(pc) for pc in config.PCS] + ['het'],
-            help='specify what to plot, e.g. "1" for PC 1 or "het" for SNP'
-             f' heterozygosity (default: first PC) [{config.PCS[0]}]')
+            help=f'{self.tab}specify what to plot, e.g. "1" for PC 1 or "het"'
+             f' for SNP heterozygosity (default: first PC) [{config.PCS[0]}]')
         chromplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', metavar='\b',
             required=False, type=str, default=None,
@@ -264,9 +264,8 @@ class CLI:
         chromplot_parser.add_argument(
             '-c', '--colors', dest='hex_codes', metavar='\b',
             required=False, type=str, default=None,
-            help=f'{self.tab}HEX codes (drop "#") for color groups; check'
-              ' documentation for formatting instructions (requires'
-              ' -g/--groups)')
+            help=f'{self.tab}HEX codes (drop "#"); check documentation for'
+              '  formatting instructions (requires -g/--groups)')
         chromplot_parser.add_argument(
             '-i', '--interval', dest='interval', metavar='\b',
             required=False, type=int, default=int(config.PLOT_INTERVAL),
@@ -316,11 +315,11 @@ class CLI:
 
         # positional arguments
         genomeplot_parser.add_argument(
-            '-p', '--plot_variable', dest='plot_var', metavar='\b',
+            '-p', '--plot_var', dest='plot_var', metavar='\b',
             required=False, type=str, default=str(config.PCS[0]),
             choices=[str(pc) for pc in config.PCS] + ['het'],
-            help='specify what to plot, e.g. "1" for PC 1 or "het" for SNP'
-             f' heterozygosity (default: first PC) [{config.PCS[0]}]')
+            help=f'{self.tab}specify what to plot, e.g. "1" for PC 1 or "het"'
+             f' for SNP heterozygosity (default: first PC) [{config.PCS[0]}]')
         genomeplot_parser.add_argument(
             '-m', '--metadata', dest='metadata_path', metavar='\b',
             required=False, type=str, default=None,
@@ -335,9 +334,8 @@ class CLI:
         genomeplot_parser.add_argument(
             '-c', '--colors', dest='hex_codes', metavar='\b',
             required=False, type=str, default=None,
-            help=f'{self.tab}HEX codes (drop "#") for color groups; check'
-              ' documentation for formatting instructions (requires'
-              ' -g/--groups)')
+            help=f'{self.tab}HEX codes (drop "#"); check documentation for'
+              '  formatting instructions (requires -g/--groups)')
         genomeplot_parser.add_argument(
             '-i', '--interval', dest='interval', metavar='\b',
             required=False, type=int, default=int(config.PLOT_INTERVAL),
@@ -529,9 +527,15 @@ class CLI:
         # hex codes --> hex_code_dct
         if self.args.get('hex_codes'):
             self.args['hex_code_dct'] = {}
-            for i in self.args['hex_codes'].split(','):
-                group, hex_code = i.split(':')[0], i.split(':')[1]
-                self.args['hex_code_dct'][group] = f'#{hex_code}'
+            try:
+                for i in self.args['hex_codes'].split(','):
+                    group, hex_code = i.split(':')[0], i.split(':')[1]
+                    self.args['hex_code_dct'][group] = f'#{hex_code}'
+            except:
+                log.error_nl(
+                    '-c/--colors: HEX codes not formatted correctly,'
+                    ' please refer to the documentation'
+                )
         else:
             self.args['hex_code_dct']= None
 
@@ -592,6 +596,7 @@ class CLI:
         # add config settings
         self.args['pcs'] = config.PCS
         self.args['pcangsd_em_eig'] = int(config.PCANGSD_EM_EIG)
+        self.args['pcangsd_em_iter'] = int(config.PCANGSD_EM_ITER)
         self.args['skip_monomorphic'] = bool(config.SKIP_MONOMORPHIC)
         self.args['gt_min_var_per_w'] = int(config.GT_MIN_VAR_PER_W)
         self.args['gl_pl_min_var_per_w'] = int(config.GL_PL_MIN_VAR_PER_W)
