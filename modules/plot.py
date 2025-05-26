@@ -24,7 +24,7 @@ log = Log()
 
 class Plot:
     '''
-    Plot windowed PC and associated data.
+    Plot windowed PC and associated data
     '''
 
     def __init__(self,                                                         # pylint: disable=W0102
@@ -112,7 +112,7 @@ class Plot:
     @staticmethod
     def subset(df, interval):
         '''
-        Subset a dataframe to the specified interval (-i).
+        Subset a dataframe to the specified interval (-i)
         '''
 
         return df.iloc[::interval, :]
@@ -131,7 +131,7 @@ class Plot:
     def annotate(self):
         '''
         Annotate per-sample data with a metadata file if supplied, otherwise
-        just reformat for plotting function.
+        just reformat for plotting function
         '''
 
         # fetch sample names and order (=data_df column names)
@@ -189,7 +189,7 @@ class Plot:
 
     def set_colors(self):
         '''
-        Parse per-sample plot color specifications and compile color_dct.
+        Parse per-sample plot color specifications and compile color_dct
         '''
 
         # fetch group_id (=color_by) if specified, else default to 'id'
@@ -282,7 +282,7 @@ class Plot:
 
     def savefig(self):
         '''
-        Save figure in HTML and/or other (PDF, SVG, PNG) format(s).
+        Save figure in HTML and/or other (PDF, SVG, PNG) format(s)
         '''
         for fmt in self.plot_fmt_lst:
             if fmt == 'html':
@@ -294,7 +294,7 @@ class Plot:
     def chromplot(self):
         '''
         Plot per-sample values for one chromosome (e.g. PC 1) with small panel
-        of per window values (e.g. PC 1 variance explained) on top.
+        of per window values (e.g. PC 1 variance explained) on top
         '''
 
         # LOAD & PREPARE DATA
@@ -538,7 +538,7 @@ class Plot:
 
     def genomeplot(self):
         '''
-        Plot per-sample values for multiple chromosomes (e.g. PC 1).
+        Plot per-sample values for multiple chromosomes (e.g. PC 1)
         '''
 
         # import data module

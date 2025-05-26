@@ -19,7 +19,7 @@ class Log():
 
     def newline(self):
         '''
-        Print ERROR message to STDERR and exit.
+        Print ERROR message to STDERR and exit
         '''
 
         print('',
@@ -30,7 +30,7 @@ class Log():
 
     def info(self, message):
         '''
-        Print INFO message to STDERR.
+        Print INFO message to STDERR
         '''
 
         print(f'[INFO] {message}',
@@ -41,7 +41,7 @@ class Log():
 
     def error(self, message):
         '''
-        Print ERROR message to STDERR and exit.
+        Print ERROR message to STDERR and exit
         '''
 
         print(f'[ERROR] {message}\n',
@@ -52,7 +52,7 @@ class Log():
 
     def error_nl(self, message):
         '''
-        Print ERROR message to STDERR and exit.
+        Print ERROR message to STDERR and exit
         '''
 
         print(f'\n[ERROR] {message}\n',

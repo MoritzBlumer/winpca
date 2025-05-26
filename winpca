@@ -67,7 +67,7 @@ def main():
             file_fmt=file_fmt,
             var_fmt=args['var_fmt'],
             pcs = args['pcs'],
-            n_pcs = args['n_pcs'],
+            pcangsd_em_eig = args['pcangsd_em_eig'],
             sample_lst=args['sample_lst'],
             chrom=args['chrom'],
             start=args['start'],
@@ -261,4 +261,11 @@ def main():
 
 # EXECUTE
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        log.newline()
+        log.info(
+            'Exiting'
+        )
+        log.newline()

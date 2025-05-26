@@ -18,9 +18,9 @@ log = Log()
 
 class WPCAData:
     '''
-    Central container for PCA and associated data. Compiles object from
-    existing output files (via prefix) or directly from w_pca instance. Data
-    can be modified through indluded modifier methods.
+    Central container for PCA and associated data, compiles object from
+    existing output files (via prefix) or directly from w_pca instance; data
+    can be modified through indluded modifier methods
     '''
 
     def __init__(self, prefix, pcs, w_pca_obj=None):
@@ -41,7 +41,7 @@ class WPCAData:
 
     def from_w_pca(self):
         '''
-        Compile from out_dct of w_pca instance.
+        Compile from out_dct of w_pca instance
         '''
 
         # convert to df
@@ -135,7 +135,7 @@ class WPCAData:
 
     def to_files(self):
         '''
-        Write output (pc_dfs, hetp_df, miss_df, stat_df) to files.
+        Write output (pc_dfs, hetp_df, miss_df, stat_df) to files
         '''
 
         # create output directory if prefix contains '/'
@@ -169,7 +169,7 @@ class WPCAData:
 
     def modify_data(self, attr_name, mod_func, *args):
         '''
-        Modify an attribute of Data instance with a supplied function.
+        Modify an attribute of Data instance with a supplied function
         '''
         # get attribute
         attr = getattr(self, attr_name)

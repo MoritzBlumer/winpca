@@ -21,7 +21,7 @@ class Polarize:
     (1) Adaptive: using the n samples with highest local absolute values for
         polarization
     (2) Guide Samples: Use one ore more user-specified guide-samples to
-        polarize along the entire sequence.
+        polarize along the entire sequence
     '''
 
     @staticmethod
@@ -29,7 +29,7 @@ class Polarize:
         '''
         Polarize a dataframe using the signs of the most frequent polarizer
         (individual with largest absolute value) across n_prev_windows to
-        inform whether to flip the current window.
+        inform whether to flip the current window
         '''
 
         def is_positive(x):
@@ -44,7 +44,7 @@ class Polarize:
             value) of the current window, then the most frequent polarizer
             across the previous windows. Then record the polarization decision
             of the current window against the included previous windows and
-            output the most frequent decision.
+            output the most frequent decision
             '''
 
             # get polarizer individual of the current window
@@ -135,7 +135,7 @@ class Polarize:
     @staticmethod
     def guide_samples(pc_df, guide_sample_lst):
         '''
-        Use fixed guide samples to polarize along a chromosome.
+        Use fixed guide samples to polarize along a chromosome
         '''
 
         # list that will hold per-window flip instructions per guide sample
@@ -189,13 +189,13 @@ class Polarize:
 
 class Flip:
     '''
-    Flip all PC values of a chromosome or specific windows.
+    Flip all PC values of a chromosome or specific windows
     '''
 
     @staticmethod
     def flip_chrom(pc_df):
         '''
-        Flip all PC values for a chromosome.
+        Flip all PC values for a chromosome
         '''
 
         return pc_df * -1
@@ -204,7 +204,7 @@ class Flip:
     @staticmethod
     def flip_windows(pc_df, coord_lst):
         '''
-        Flip specific windows.
+        Flip specific windows
         '''
 
         # infer step size

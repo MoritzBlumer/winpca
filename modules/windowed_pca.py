@@ -33,7 +33,7 @@ log = Log()
 class WPCA:
 
     '''
-    Parse hard-called genotypes (GT) from VCF or TSV and apply a function.
+    Parse hard-called genotypes (GT) from VCF or TSV and apply a function
     '''
 
     def __init__(self,
@@ -41,7 +41,7 @@ class WPCA:
                  file_fmt,
                  var_fmt,
                  pcs,
-                 n_pcs,
+                 pcangsd_em_eig,
                  sample_lst,
                  chrom, start, stop,
                  w_size, w_step,
@@ -61,7 +61,7 @@ class WPCA:
         self.file_fmt = file_fmt
         self.var_fmt = var_fmt
         self.pcs = pcs
-        self.n_pcs = n_pcs
+        self.pcangsd_em_eig = pcangsd_em_eig
         self.sample_lst = sample_lst
         self.chrom = chrom
         self.start = start
@@ -93,6 +93,7 @@ class WPCA:
         self.gl_min_maf_arr = None
         self.w_idx = None
         self.pct_complete = 0
+        self.all_empty = None
 
         # instantiate results dict
         self.out_dct = {
@@ -129,9 +130,9 @@ class WPCA:
         while self.pos > self.w_stop:
             process_func()
             self.init_win()
-        if self.pos >= self.stop:
+        if self.pos > self.stop:
             if (self.proc_trail_trunc_w
-                and any(x[0] > self.w_stop for x in self.win)
+                and any(x[0] > self.w_stop-self.w_step for x in self.win)
             ):
                 self.w_stop = self.stop
                 process_func()
@@ -153,7 +154,7 @@ class WPCA:
             self.w_stop = self.win[-1][0]
             process_func()
             self.init_win_x()
-        if self.pos >= self.stop:
+        if self.pos > self.stop:
             if self.proc_trail_trunc_w:
                 if len(self.win) > (self.w_size-self.w_step):
                     self.w_start = self.win[0][0]
@@ -166,7 +167,7 @@ class WPCA:
     def init_win(self):
         '''
         Initialize new window by shifting one w_step and dropping obsolete
-        variants from previous window.
+        variants from previous window
         '''
 
         self.w_start = self.w_start + self.w_step
@@ -179,7 +180,7 @@ class WPCA:
 
     def gt_mean_imputation(self):
         '''
-        Mean impute missing GT calls.
+        Mean impute missing GT calls
         '''
 
         # calculate row/site means (ignoring NaN)
@@ -197,7 +198,7 @@ class WPCA:
     def init_win_x(self):
         '''
         Initialize new window by shifting one w_step and dropping obsolete
-        variants from previous window.
+        variants from previous window
         '''
 
         self.w_idx += 1
@@ -211,7 +212,7 @@ class WPCA:
 
     def gt_drop_missing_sites(self):
         '''
-        remove any site with at least one missing GT call.
+        remove any site with at least one missing GT call
         '''
 
         # fetch indices of rows/sites WITHOUT missing call(s)
@@ -223,7 +224,7 @@ class WPCA:
 
     def gt_min_maf_filter(self):
         '''
-        Drop SNPs with minor allele frequency below specified value.
+        Drop SNPs with minor allele frequency below specified value
         '''
 
         # count # GTs per row/site (np.sum counts True), *2 because diploid
@@ -244,7 +245,7 @@ class WPCA:
     def gt_process_win(self):
         '''
         Remove POS info, convert to numpy array and apply target function or
-        return empty array if there are no variants.
+        return empty array if there are no variants
         '''
         # non-empty: trim off pos info, convert to numpy arr, drop missing
         # sites or mean impute, apply min_maf filter
@@ -264,7 +265,7 @@ class WPCA:
     def gl_min_maf_filter(self):
         '''
         Drop variants with estimated minor allele frequency below specified
-        value using PCAngsd code.
+        value using PCAngsd code
         '''
 
         # PCAngsd
@@ -293,7 +294,7 @@ class WPCA:
     def gl_process_win(self):
         '''
         Remove POS info and convert to numpy array, return empty array if there
-        are no variants.
+        are no variants
         '''
 
         # mute STDOUT by redirecting STDOUT tp /dev/null
@@ -322,7 +323,7 @@ class WPCA:
         '''
         Convert a 2D array of phred scaled genotype likelihoods (PL) to
         normalized genotype likelihoods (GL) and return a 2D array, omitting
-        the third GL, which is the expected input for PCAngsd.
+        the third GL, which is the expected input for PCAngsd
         '''
 
         # fetch dimensions
@@ -351,7 +352,7 @@ class WPCA:
     def pl_process_win(self):
         '''
         Remove POS info and convert to numpy array, return empty array if there
-        are no variants.
+        are no variants
         '''
 
         # mute STDOUT by redirecting STDOUT tp /dev/null
@@ -380,7 +381,7 @@ class WPCA:
         '''
         Apply min_maf filter, drop rows/sites with missing call(s) OR mean
         impute, conduct PCA, but if (n_var < min_var_per_w) generate
-        empty/dummy output instead.
+        empty/dummy output instead
         '''
 
         # get window mid for X value
@@ -417,6 +418,7 @@ class WPCA:
 
         # if # variants passes specified threshold
         if n_var >= self.gt_min_var_per_w:
+
             # pca
             pca = allel.pca(
                 self.w_gt_arr,
@@ -431,7 +433,7 @@ class WPCA:
                 'pos': self.w_pos,
                 'w_start': self.w_start,
                 'w_stop': self.w_stop,
-                'w_size': self.w_stop - self.w_start,
+                'w_size': self.w_stop - self.w_start + 1,
                 'hetp': hetp_lst,
                 'n_miss': n_miss_arr,
                 'n_var': n_var
@@ -441,6 +443,9 @@ class WPCA:
                 out[f'pc_{i}_ve'] = round(
                     pca[1].explained_variance_ratio_[i-1]*100, 2
                 )
+            
+            # set all_empty = False
+            self.all_empty = False
 
         # else create empty output & print info
         else:
@@ -449,7 +454,7 @@ class WPCA:
                 'pos': self.w_pos,
                 'w_start': self.w_start,
                 'w_stop': self.w_stop,
-                'w_size': self.w_stop - self.w_start,
+                'w_size': self.w_stop - self.w_start + 1,
                 'hetp': empty_lst,
                 'n_miss': empty_lst,
                 'n_var': n_var
@@ -458,10 +463,10 @@ class WPCA:
                 out[f'pc_{i}'] = empty_lst
                 out[f'pc_{i}_ve'] = None
 
-            log.info('Skipped window'
-                     f' {self.w_start}-{self.w_start + self.w_size-1} with'
-                     f' {n_var} variants (theshold: {self.gt_min_var_per_w}'
-                      ' variants)')
+            log.info(
+                 f'Skipped window {self.w_start}-{self.w_stop} with {n_var}'
+                 f' variants (theshold: {self.gt_min_var_per_w} variants)'
+            )
 
         # append output
         self.out_dct[self.w_idx] = out
@@ -470,7 +475,7 @@ class WPCA:
     def pcangsd(self):
         '''
         Conduct PCAngsd PCA, but if (n_variants < min_var_per_w) generate
-        empty/dummy output instead.
+        empty/dummy output instead
         '''
 
         # get window mid for X value
@@ -488,13 +493,13 @@ class WPCA:
                 cov_arr, _, _, _, _ = emPCA(
                     self.w_gl_arr,
                     self.gl_min_maf_arr,
-                    self.n_pcs, 100, 1e-5,
+                    self.pcangsd_em_eig, 100, 1e-5,
                 )
             except:                                                            # pylint: disable=W0702
                 cov_arr, _, _, _, _ = emPCA(                                   # pylint: disable=E1121
                     self.w_gl_arr,
                     self.gl_min_maf_arr,
-                    self.n_pcs, 100, 1e-5,
+                    self.pcangsd_em_eig, 100, 1e-5,
                     self.n_threads
                 )
 
@@ -513,7 +518,7 @@ class WPCA:
                 'pos': self.w_pos,
                 'w_start': self.w_start,
                 'w_stop': self.w_stop,
-                'w_size': self.w_stop - self.w_start,
+                'w_size': self.w_stop - self.w_start + 1,
                 'hetp': [None for x in eigenvec_arr[:, 0]],
                 'n_miss': [None for x in eigenvec_arr[:, 0]],
                 'n_var': n_var
@@ -522,6 +527,9 @@ class WPCA:
                 out[f'pc_{i}'] = eigenvec_arr[:, i-1]
                 out[f'pc_{i}_ve'] = round(pct_exp_arr[i-1], 2)
 
+            # set all_empty = False
+            self.all_empty = False
+
         # else create empty output
         else:
             empty_lst = [None] * (self.w_gl_arr.shape[1]//2)
@@ -529,7 +537,7 @@ class WPCA:
                 'pos': self.w_pos,
                 'w_start': self.w_start,
                 'w_stop': self.w_stop,
-                'w_size': self.w_stop - self.w_start,
+                'w_size': self.w_stop - self.w_start + 1,
                 'hetp': empty_lst,
                 'n_miss':empty_lst,
                 'n_var': n_var
@@ -538,10 +546,10 @@ class WPCA:
                 out[f'pc_{i}'] = empty_lst
                 out[f'pc_{i}_ve'] = None
 
-            log.info('Skipped window'
-                     f' {self.w_start}-{self.w_start + self.w_size-1} with'
-                     f' {n_var} variants (theshold: {self.gl_pl_min_var_per_w}'
-                      ' variants)')
+            log.info(
+                 f'Skipped window {self.w_start}-{self.w_stop} with {n_var}'
+                 f' variants (theshold: {self.gl_pl_min_var_per_w} variants)'
+            )
 
         # append output
         self.out_dct[self.w_idx] = out
@@ -550,7 +558,7 @@ class WPCA:
     def window_parser(self):
         '''
         Apply a target function to windows of variants (GT field) in an
-        (optionally gzipped) VCF file.
+        (optionally gzipped) VCF file
         '''
 
         # calculate total number of windows
@@ -590,6 +598,18 @@ class WPCA:
             if self.file_fmt == 'BEAGLE':
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
+                
+            if self.sample_lst:
+                for s_id in self.sample_lst:
+                    missing_sid_lst = [
+                        x for x in self.sample_lst
+                        if x not in var_file_sample_lst
+                    ]
+                    if missing_sid_lst:
+                        log.error_nl(
+                                f'-s/--samples: {','.join(missing_sid_lst)} not in'
+                                f' {self.variant_file_path}'
+                        )
 
             # use var_file_sample_lst (drop duplicates) if no samples specified
             if self.sample_lst is None:
@@ -791,12 +811,46 @@ class WPCA:
                         else:
                             if self.parse_variant(self.pl_process_win, pls):
                                 break
-
+        
         # check if any windows were processed
         if len(self.out_dct) == 0:
-            log.error('No windows found. Please check if chromosome name and' \
-            ' variant format were specified correctly')
+            log.error(
+                'No windows found. Please check if chromosome name and' 
+                ' variant format were specified correctly'
+            )
             log.newline()
+
+        # print error if only one window was processed
+        if len(self.out_dct) == 1:
+            if self.x_mode:
+                log.error(
+                    '-w/--window_size and --x: window size is interpreted as'
+                    ' SNP count in --x mode, consider decreasing window size'
+                )
+                log.newline()
+            else:
+                log.error(
+                    '-w/--window_size: Not enough variants to fill more than'
+                    ' one window, consider decreasing window size'
+                )
+                log.newline()
+
+        # check if all windows were empty
+        if self.all_empty is not False:
+            if self.var_fmt == 'GT':
+                log.error_nl(
+                    'No windows contained enough variants, consider increasing'
+                    ' window size (-w) or decreasing GT_MIN_VAR_PER_W (--> '
+                    ' modules/config.py)'
+                )
+                log.newline()
+            if self.var_fmt in ['GL', 'PL']:
+                log.error_nl(
+                    'No windows contained enough variants, consider increasing'
+                    ' window size (-w) or decreasing GL_PL_MIN_VAR_PER_W (--> '
+                    ' modules/config.py)'
+                )
+                log.newline()
 
         # print exit message
         log.newline()

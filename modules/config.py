@@ -28,7 +28,7 @@ PLOT_INTERVAL = 5          # plot only every nth value (5th if specifying 5)
 
 # pca
 PCS = [1, 2]               # PCs to output
-N_PCS = 2                  # sets PCAngsd '-eig' parameter (should be >= PCS)
+PCANGSD_EM_EIG = 2         # sets PCAngsd '-eig' parameter (should be >= PCS)
 GT_MIN_VAR_PER_W = 20      # min # of variants per window
 GL_PL_MIN_VAR_PER_W = 100  # min # of variants per window
 SKIP_MONOMORPHIC = True    # skip invariant sites

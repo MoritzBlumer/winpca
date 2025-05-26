@@ -154,7 +154,7 @@ class CLI:
 
     def polarize(self):
         '''
-        (Re)-polarize windowed PC data from a previous run.
+        (Re)-polarize windowed PC data from a previous run
         '''
 
         # add subparser
@@ -189,8 +189,7 @@ class CLI:
 
     def flip(self):
         '''
-        Flip/reflect windowed PC data from a previous run (multiply values by
-        -1)
+        Flip/reflect windowed PC data from a previous run (multiply by -1)
         '''
 
         # add subparser
@@ -428,12 +427,18 @@ class CLI:
                      ' specified)'
                 )
             else:
-                self.args['chrom'] = self.args['region'].split(':')[0]
-                self.args['start'] = \
-                    int(self.args['region'].split(':')[1].split('-')[0])
-                self.args['end'] = \
-                    int(self.args['region'].split(':')[1].split('-')[1])
-
+                try:
+                    self.args['chrom'] = self.args['region'].split(':')[0]
+                    self.args['start'] = \
+                        int(self.args['region'].split(':')[1].split('-')[0])
+                    self.args['end'] = \
+                        int(self.args['region'].split(':')[1].split('-')[1])
+                except:
+                    log.error_nl(
+                        f'REGION: {self.args["region"]} is formatted incorrectly,'
+                        ' please make sure to specify genomic coordinates'
+                        ' correctly'
+                    )
 
         # w_size
         if self.args.get('w_size'):
@@ -586,7 +591,7 @@ class CLI:
 
         # add config settings
         self.args['pcs'] = config.PCS
-        self.args['n_pcs'] = int(config.N_PCS)
+        self.args['pcangsd_em_eig'] = int(config.PCANGSD_EM_EIG)
         self.args['skip_monomorphic'] = bool(config.SKIP_MONOMORPHIC)
         self.args['gt_min_var_per_w'] = int(config.GT_MIN_VAR_PER_W)
         self.args['gl_pl_min_var_per_w'] = int(config.GL_PL_MIN_VAR_PER_W)
