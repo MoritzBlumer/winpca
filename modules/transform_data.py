@@ -208,7 +208,6 @@ class Flip:
         '''
 
         # infer step size
-        w_step = pc_df.index[1] - pc_df.index[0]
         w_lst = list(pc_df.index)
 
         # iterate specified flip regions

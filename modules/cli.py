@@ -431,33 +431,33 @@ class CLI:
                         int(self.args['region'].split(':')[1].split('-')[0])
                     self.args['end'] = \
                         int(self.args['region'].split(':')[1].split('-')[1])
-                except:
+                except:                                                        # pylint: disable=W0702
                     log.error_nl(
-                        f'REGION: {self.args["region"]} is formatted incorrectly,'
-                        ' please make sure to specify genomic coordinates'
-                        ' correctly'
+                        f'REGION: {self.args["region"]} is formatted,'
+                        ' incorrectly please make sure to specify genomic'
+                        ' coordinates correctly'
                     )
 
         # w_size
         if self.args.get('w_size'):
             if self.args['var_fmt'] == 'GT' \
                 and self.args['w_size'] < config.GT_MIN_VAR_PER_W:
-                    log.error_nl(
-                           '-w/--w_size: window size (currently:'
-                          f' {self.args["w_size"]}) must be >='
-                          f' GT_MIN_VAR_PER_W (--> modules/config.py,'
-                          f' currently: {config.GT_MIN_VAR_PER_W}),'
-                           ' please change one accordingly'
-                    )                
+                    log.error_nl(                                              # pylint: disable=W0311
+                         '-w/--w_size: window size (currently:'
+                        f' {self.args["w_size"]}) must be >='
+                        f' GT_MIN_VAR_PER_W (--> modules/config.py,'
+                        f' currently: {config.GT_MIN_VAR_PER_W}),'
+                         ' please change one accordingly'
+                    )
             elif self.args['var_fmt'] in ['GL', 'PL'] \
                 and self.args['w_size'] < config.GL_PL_MIN_VAR_PER_W:
-                    log.error_nl(
-                           '-w/--w_size: window size (currently:'
-                          f' {self.args["w_size"]}) must be >='
-                          f' GL_PL_MIN_VAR_PER_W (--> modules/config.py,'
-                          f' currently: {config.GL_PL_MIN_VAR_PER_W}),'
-                           ' please change one accordingly'
-                    )        
+                    log.error_nl(                                              # pylint: disable=W0311
+                         '-w/--w_size: window size (currently:'
+                        f' {self.args["w_size"]}) must be >='
+                        f' GL_PL_MIN_VAR_PER_W (--> modules/config.py,'
+                        f' currently: {config.GL_PL_MIN_VAR_PER_W}),'
+                         ' please change one accordingly'
+                    )
 
         # samples --> sample_lst
         if self.args.get('samples'):

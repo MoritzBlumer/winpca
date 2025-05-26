@@ -131,7 +131,6 @@ class WPCA:
         '''
         while self.pos > self.w_stop:
             process_func()
-            with open('post.txt', 'w') as f: print('\n'.join([str(x[0]) for x in self.win]), flush=True, file=f)
             self.init_win()
         if self.pos > self.stop:
             if (self.proc_trail_trunc_w
@@ -446,7 +445,7 @@ class WPCA:
                 out[f'pc_{i}_ve'] = round(
                     pca[1].explained_variance_ratio_[i-1]*100, 2
                 )
-            
+
             # set all_empty = False
             self.all_empty = False
 
@@ -605,18 +604,18 @@ class WPCA:
             if self.file_fmt == 'BEAGLE':
                 var_file_sample_lst = \
                     variant_file.readline().strip().split('\t')[3:]
-                
+
+            # error if specified samples are missing
             if self.sample_lst:
-                for s_id in self.sample_lst:
-                    missing_sid_lst = [
-                        x for x in self.sample_lst
-                        if x not in var_file_sample_lst
-                    ]
-                    if missing_sid_lst:
-                        log.error_nl(
-                                f'-s/--samples: {','.join(missing_sid_lst)} not in'
-                                f' {self.variant_file_path}'
-                        )
+                missing_sid_lst = [
+                    x for x in self.sample_lst
+                    if x not in var_file_sample_lst
+                ]
+                if missing_sid_lst:
+                    log.error_nl(
+                        f'-s/--samples: {','.join(missing_sid_lst)} not in'
+                        f' {self.variant_file_path}'
+                    )
 
             # use var_file_sample_lst (drop duplicates) if no samples specified
             if self.sample_lst is None:
@@ -651,8 +650,6 @@ class WPCA:
             if self.var_fmt == 'GT':
 
                 if self.file_fmt == 'VCF':
-                    f = open('pre.txt', 'w')                                   ## DELETE
-                    m = open('mon.txt', 'w')                                   ## DELETE
                     for line in variant_file:
                         line = line.strip().split('\t')
                         q_chrom = line[0]
@@ -661,7 +658,6 @@ class WPCA:
                         self.pos = int(line[1])
                         if self.pos < self.start:
                             continue
-                        f.write(f'{self.pos}\n')                                ## DELETE
                         filter_field = line[6]
                         if filter_field != 'PASS' and self.vcf_pass_filter:
                             continue
@@ -672,7 +668,6 @@ class WPCA:
                         gts = [self.gt_code_dct[x] for x in gts]
                         if self.skip_monomorphic \
                             and len(set(gts)-{np.nan}) == 1:
-                            m.write(f'{self.pos}\n')                            ## DELETE
                             continue
                         if self.x_mode:
                             if self.parse_variant_x(self.gt_process_win, gts):
@@ -680,8 +675,7 @@ class WPCA:
                         else:
                             if self.parse_variant(self.gt_process_win, gts):
                                 break
-                    f.close()                                                  ## DELETE
-                    m.close()                                                  ## DELETE
+
                 if self.file_fmt == 'TSV':
                     for line in variant_file:
                         line = line.strip().split('\t')
@@ -836,7 +830,7 @@ class WPCA:
                         else:
                             if self.parse_variant(self.pl_process_win, pls):
                                 break
-        
+
         # check if any windows were processed
         if len(self.out_dct) == 0:
             log.error_nl(
