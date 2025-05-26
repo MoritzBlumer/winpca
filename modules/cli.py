@@ -184,7 +184,7 @@ class CLI:
             required=False, type=str,
             default=','.join(str(x) for x in config.PCS),
             help=f'{self.tab}comma-separated list of principal components to'
-             f' polarize [{','.join(str(x) for x in config.PCS)}]')
+             f' polarize [{",".join(str(x) for x in config.PCS)}]')
 
 
     def flip(self):
