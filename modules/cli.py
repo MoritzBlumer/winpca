@@ -514,7 +514,7 @@ class CLI:
                     except:                                                    # pylint: disable=W0702
                         log.error_nl(
                             f'-w/--windows: {self.args["flip_windows"]}: file'
-                            ' does not exist of corrdinates are malformatted'
+                            ' does not exist or coordinates are malformatted'
                         )
         else:
             self.args['flip_window_lst'] = None
