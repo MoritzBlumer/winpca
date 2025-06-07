@@ -510,11 +510,11 @@ class CLI:
                 else:
                     try:
                         self.args['flip_window_lst'] = \
-                            [int(self.args['flip_windows'])]
+                            [self.args['flip_windows']]
                     except:                                                    # pylint: disable=W0702
                         log.error_nl(
                             f'-w/--windows: {self.args["flip_windows"]}: file'
-                            ' does not exist'
+                            ' does not exist of corrdinates are malformatted'
                         )
         else:
             self.args['flip_window_lst'] = None
