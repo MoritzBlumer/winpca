@@ -10,7 +10,7 @@ Configuration.
 VAR_FMT = 'GT'             # variant type (one of 'GT', 'GL', 'PL')
 MIN_MAF = 0.01             # minor allele frequency threshold per window
 W_SIZE = 1000000           # window size in bp
-W_STEP = 100000            # step size in bp
+W_STEP = 10000             # step size in bp
 N_THREADS = 2              # # of threads – only affects PCAngsd
 
 # winpca polarize

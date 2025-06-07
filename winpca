@@ -38,7 +38,7 @@ def main():
     args = cli.args
 
     # set mode
-    mode = args['winpca']
+    mode = args['mode']
 
 
     ## MODE: WINDOWED PCA

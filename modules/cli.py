@@ -44,7 +44,7 @@ class CLI:
 
         # initiate subparsers
         self.subparsers = self.parser.add_subparsers(
-            dest='winpca', required=True
+            dest='mode', required=True
         )
 
         # variables
@@ -376,7 +376,7 @@ class CLI:
                  '-p/--polarize: please provide at least one guide sample via'
                  ' -g/--guide_samples'
             )
-        if self.args.get('winpca') == 'flip' \
+        if self.args.get('mode') == 'flip' \
             and not self.args.get('reflect') \
             and not self.args.get('flip_windows'):
             log.error_nl(
