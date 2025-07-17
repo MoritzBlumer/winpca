@@ -589,7 +589,7 @@ class WPCA:
                             ' contains sites with more than 2 alleles'
                     )
 
-        # open iput file
+        # open input file
         with read_func(self.variant_file_path, 'rt') as variant_file:
 
             # fetch sample ids from different header types
@@ -621,6 +621,14 @@ class WPCA:
             if self.sample_lst is None:
                 self.sample_lst = list(dict.fromkeys(var_file_sample_lst))
 
+            # exit if less than 10 samples are specified
+            if len(self.sample_lst) <= 10:
+                log.error_nl(
+                'Please provide at least 10 samples'
+                )
+                log.newline()
+
+
             # obtain index positions (returns first hit)
             sample_idx_lst = [
                 var_file_sample_lst.index(x) for x in self.sample_lst
@@ -636,6 +644,8 @@ class WPCA:
                 if self.var_fmt == 'PL':
                     sample_idx_lst = [[i, i+1, i+2] for i in sample_idx_lst]
                 sample_idx_lst = [x for i in sample_idx_lst for x in i]
+
+
 
         # initiate first window
         self.w_start = self.start
