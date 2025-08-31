@@ -286,6 +286,12 @@ class CLI:
             required=False, action='store_true', default=False,
             help='set flag to reverse the plotting order (requires'
               ' -g/--groups)')
+        chromplot_parser.add_argument(
+            '-l', '--locations', dest='locations_path', metavar='\b',
+            required=False, type=str, default=None,
+            help=f'{self.tab}path to locations TSV; 1st field being the'
+              ' sequence id, 2nd and 3rd the start and end coordinates and '
+              ' 4th (optional) a HEX code (default is #ff0000)')
 
 
     def genomeplot(self):
@@ -357,7 +363,12 @@ class CLI:
             required=False, action='store_true', default=False,
             help='set flag to reverse the plotting order (requires'
               ' -g/--groups)')
-
+        genomeplot_parser.add_argument(
+            '-l', '--locations', dest='locations_path', metavar='\b',
+            required=False, type=str, default=None,
+            help=f'{self.tab}path to locations TSV; 1st field being the'
+              ' sequence id, 2nd and 3rd the start and end coordinates and '
+              ' 4th (optional) a HEX code (default is #ff0000)')
 
     def parse_args(self):
         '''
@@ -524,10 +535,18 @@ class CLI:
             if self.args['plot_var'] == 'het':
                 self.args['plot_var'] = 'hetp'
 
+        # metadata
         if self.args.get('metadata_path'):
             if not os.path.exists(self.args['metadata_path']):
                 log.error_nl(
                     f'-m/--metadata: {self.args["metadata_path"]}: file does'
+                     ' not exist'
+                )
+
+        if self.args.get('locations_path'):
+            if not os.path.exists(self.args['locations_path']):
+                log.error_nl(
+                    f'-l/--locations: {self.args["locations_path"]}: file does'
                      ' not exist'
                 )
 

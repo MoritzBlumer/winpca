@@ -39,6 +39,17 @@ class Log():
               )
 
 
+    def info_nl(self, message):
+        '''
+        Print INFO message to STDERR
+        '''
+
+        print(f'\n[INFO] {message}',
+              file=sys.stderr,
+              flush=True,
+              )
+
+
     def error(self, message):
         '''
         Print ERROR message to STDERR and exit

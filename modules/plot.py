@@ -39,6 +39,7 @@ class Plot:
                  run_prefix=None,
                  run_id_lst=None,
                  metadata_path=None,
+                 locations_path=None,
                  color_by=None,
                  hex_code_dct=None,
                  numeric=None,
@@ -63,6 +64,7 @@ class Plot:
         self.run_prefix = run_prefix
         self.run_id_lst = run_id_lst
         self.metadata_path = metadata_path
+        self.locations_path = locations_path
         self.color_by = color_by
         self.hex_code_dct = hex_code_dct
         self.numeric = numeric
@@ -78,6 +80,7 @@ class Plot:
         self.data_df = pd.DataFrame()
         self.stat_df = pd.DataFrame()
         self.metadata_df = pd.DataFrame()
+        self.locations_dct = None
         self.group_id = None
         self.group_lst = None
         self.color_dct = None
@@ -93,7 +96,7 @@ class Plot:
             self.plot_var =  f'pc_{self.plot_var}'
         stat_var = f'{stat_var}_df'
 
-        # define custom color scale
+        # define custom color scale for numeric scale
         # colors = ['blue', 'blue', 'purple', 'red', 'yellow']
         colors = ['#000080', '#0000FF', '#800080', '#FF0000', '#FFFF00']
         thresholds = [0, 0.25, 0.5, 0.75, 1]
@@ -108,6 +111,12 @@ class Plot:
 
         # set allowed NA strings
         self.na_lst = [None, 'NA', 'na', 'NaN']
+
+        # set default color/opacity for locations/features (and remove '#')
+        self.locations_color = '#FF0000'
+        self.locations_color = self.locations_color.replace('#', '')
+        self.locations_opacity = 0.4
+
 
     @staticmethod
     def subset(df, interval):
@@ -280,6 +289,44 @@ class Plot:
             self.group_lst.reverse()
 
 
+    def parse_locations(self):
+        '''
+        Parse locations file and validate HEX codes 
+        '''
+
+        # read locations file
+        locations_df = pd.read_csv(
+            self.locations_path, sep='\t', dtype=str, header=None,
+        )
+
+
+        # parse columns, exit if < 3 and set default color if unspecified;
+        # use default color if at least one HEX code is invalid and print info
+        if locations_df.shape[1] < 3:
+            log.error_nl(
+                '-l/--locations: locations file not formatted correctly,'
+                ' please refer to the documentation')
+        elif locations_df.shape[1] == 3:
+            locations_df.columns = ['chrom', 'start', 'end']
+            locations_df['hex_code'] = self.locations_color
+        elif locations_df.shape[1] >= 4:
+            locations_df = locations_df.iloc[:, :4]
+            locations_df.columns = ['chrom', 'start', 'end', 'hex_code']
+            locations_df['hex_code'] = locations_df['hex_code'].str.replace(
+                '#', '', regex=False
+            )
+            if not all(self.is_hex(x[1:]) for x in locations_df['hex_code']) \
+                or not all(len(x) == 6 for x in locations_df['hex_code']):
+                locations_df['hex_code'] = self.locations_color
+                log.info(
+                     '-l/--locations: at least one HEX codes invalid, using'
+                    f' default (#{self.locations_color}) instead; please'
+                     ' refer to the documentation for formatting instructions')
+
+        # convert to dict
+        self.locations_dct = locations_df.to_dict(orient='index')
+
+
     def savefig(self):
         '''
         Save figure in HTML and/or other (PDF, SVG, PNG) format(s)
@@ -388,6 +435,58 @@ class Plot:
 
         # set show_legend to false if using a color scale
         show_legend = not self.numeric
+
+        # plot locations if specified
+        if self.locations_path:
+
+            # parse file
+            self.parse_locations()
+
+            # plot features
+            for feature in self.locations_dct.values():
+
+                # skip if sequence id mismatch
+                if feature['chrom'] != self.chrom:
+                    log.info(
+                         '-l/--locations: sequence id not found for feature'
+                        f' {feature['chrom']}:{feature['start']}-'
+                        f'{feature['end']} – skipping')
+                    continue
+
+                # convert to integer
+                try:
+                    feature_start = int(feature['start'])
+                    feature_end = int(feature['end'])
+                except:
+                    log.error_nl(
+                         '-l/--locations: start/end positions (2nd/3rd fields)'
+                         ' must be integers')                
+
+                # swap if end < start
+                if feature_start > feature_end:
+                    feature_start, feature_end = feature_end, feature_start
+
+                # expand feature to at least 0.1% of the plot width if smaller
+                plot_range = self.end - self.start
+                if (feature_end-feature_start) < (0.001 * plot_range):
+                    midpoint = feature_start + (feature_end-feature_start)/2
+                    feature_start = midpoint - (0.0005 * plot_range)
+                    feature_end = midpoint + (0.0005 * plot_range)
+
+                # plot
+                self.fig.add_shape(
+                    type='rect',
+                    xref='x2',
+                    yref='paper',
+                    x0=feature_start,
+                    x1=feature_end,
+                    y0=0,
+                    y1=1,
+                    fillcolor=f'#{feature['hex_code']}',
+                    opacity=self.locations_opacity,
+                    line={'width': 0},
+                    layer='below',
+                )
 
         # plot each specified group (-g) separately (or 'id' if unspecified)
         for group in self.group_lst:
@@ -550,6 +649,9 @@ class Plot:
         # initite lists to hold data_dfs from different chromosomes to be
         # concatenated, end and mid of chromosome positions for plot formatting
         data_df_lst = []
+        chrom_lst = []
+        chrom_min_lst = []
+        chrom_max_lst = []
         chrom_end_lst = []
         chrom_mid_lst = []
 
@@ -574,7 +676,10 @@ class Plot:
             self.chrom = run_id
             self.annotate()
 
-            # append chrom mid/end positions to lists
+            # append chrom, chrom mid/end positions to lists
+            chrom_lst.append(run_id)
+            chrom_min_lst.append(min(self.data_df['pos']))
+            chrom_max_lst.append(max(self.data_df['pos']))
             chrom_end_lst.append(offset + max(self.data_df['pos']))
             chrom_mid_lst.append(offset + self.data_df['pos'].median())
 
@@ -593,10 +698,11 @@ class Plot:
         # set per-sample plot colors
         self.set_colors()
 
-        # figure setup
-        self.fig = go.Figure()
 
         # PLOT
+
+        # figure setup
+        self.fig = go.Figure()
 
         # set show_legend to false if using a color scale
         show_legend = not self.numeric
@@ -651,6 +757,88 @@ class Plot:
                     showlegend=show_legend,
                 ),
             )
+
+        # plot locations if specified
+        if self.locations_path:
+
+            # parse file
+            self.parse_locations()
+
+            # compile dictionary of chromosome sizes/offsets
+            chrom_offset_dct = {}
+            for i, chrom in enumerate(chrom_lst):
+                chrom_offset_dct[chrom] = {}
+                chrom_offset_dct[chrom]['min'] = chrom_min_lst[i]
+                chrom_offset_dct[chrom]['max'] = chrom_max_lst[i]
+                chrom_offset_dct[chrom]['offset'] = 0 if i == 0 \
+                    else chrom_end_lst[i-1]
+
+            # plot features
+            for feature in self.locations_dct.values():
+
+                # skip if sequence id mismatch
+                if feature['chrom'] not in chrom_lst:
+                    log.info_nl(
+                         '-l/--locations: sequence id not found for feature'
+                        f' {feature['chrom']}:{feature['start']}-'
+                        f'{feature['end']} – skipping')
+                    continue
+
+                if feature['chrom'] not in chrom_lst:
+                    log.info(
+                         '-l/--locations: sequence id not found for feature'
+                        f' {feature['chrom']}:{feature['start']}-'
+                        f'{feature['end']} – skipping')
+                    continue
+
+                # convert to integer
+                try:
+                    feature_start = int(feature['start'])
+                    feature_end = int(feature['end'])
+                except:
+                    log.error_nl(
+                         '-l/--locations: start/end positions (2nd/3rd fields)'
+                         ' must be integers')         
+
+                # swap if end < start
+                if feature_start > feature_end:
+                    feature_start, feature_end = feature_end, feature_start
+
+                # skip if location falls outside chromosome
+                chrom_min = chrom_offset_dct[feature['chrom']]['min']
+                chrom_max = chrom_offset_dct[feature['chrom']]['max']
+                if not (feature_start >= chrom_min \
+                        and feature_end <= chrom_max):
+                    log.info_nl(
+                        f'-l/--locations: feature {feature['chrom']}:'
+                        f'{feature['start']}-{feature['end']} falls outside'
+                         ' data range – skipping')
+                    continue
+
+                # add plotting offsets
+                feature_start += chrom_offset_dct[feature['chrom']]['offset']
+                feature_end += chrom_offset_dct[feature['chrom']]['offset']
+
+                # expand feature to at least 0.1% of the plot width if smaller
+                plot_range = chrom_end_lst[-1]
+                if (feature_end-feature_start) < (0.001 * plot_range):
+                    midpoint = feature_start + (feature_end-feature_start)/2
+                    feature_start = midpoint - (0.0005 * plot_range)
+                    feature_end = midpoint + (0.0005 * plot_range)
+
+                # plot
+                self.fig.add_shape(
+                    type='rect',
+                    yref='paper',
+                    x0=feature_start,
+                    x1=feature_end,
+                    y0=0,
+                    y1=1,
+                    fillcolor=f'#{feature['hex_code']}',
+                    opacity=self.locations_opacity,
+                    line={'width': 0},
+                    layer='below',
+                )
 
         # general layout
         self.fig.update_layout(
