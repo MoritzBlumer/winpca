@@ -449,8 +449,8 @@ class Plot:
                 if feature['chrom'] != self.chrom:
                     log.info(
                          '-l/--locations: sequence id not found for feature'
-                        f' {feature['chrom']}:{feature['start']}-'
-                        f'{feature['end']} – skipping')
+                        f' {feature["chrom"]}:{feature["start"]}-'
+                        f'{feature["end"]} – skipping')
                     continue
 
                 # convert to integer
@@ -482,7 +482,7 @@ class Plot:
                     x1=feature_end,
                     y0=0,
                     y1=1,
-                    fillcolor=f'#{feature['hex_code']}',
+                    fillcolor=f'#{feature["hex_code"]}',
                     opacity=self.locations_opacity,
                     line={'width': 0},
                     layer='below',
@@ -780,15 +780,15 @@ class Plot:
                 if feature['chrom'] not in chrom_lst:
                     log.info_nl(
                          '-l/--locations: sequence id not found for feature'
-                        f' {feature['chrom']}:{feature['start']}-'
-                        f'{feature['end']} – skipping')
+                        f' {feature["chrom"]}:{feature["start"]}-'
+                        f'{feature["end"]} – skipping')
                     continue
 
                 if feature['chrom'] not in chrom_lst:
                     log.info(
                          '-l/--locations: sequence id not found for feature'
-                        f' {feature['chrom']}:{feature['start']}-'
-                        f'{feature['end']} – skipping')
+                        f' {feature["chrom"]}:{feature["start"]}-'
+                        f'{feature["end"]} – skipping')
                     continue
 
                 # convert to integer
@@ -810,8 +810,8 @@ class Plot:
                 if not (feature_start >= chrom_min \
                         and feature_end <= chrom_max):
                     log.info_nl(
-                        f'-l/--locations: feature {feature['chrom']}:'
-                        f'{feature['start']}-{feature['end']} falls outside'
+                        f'-l/--locations: feature {feature["chrom"]}:'
+                        f'{feature["start"]}-{feature["end"]} falls outside'
                          ' data range – skipping')
                     continue
 
@@ -834,7 +834,7 @@ class Plot:
                     x1=feature_end,
                     y0=0,
                     y1=1,
-                    fillcolor=f'#{feature['hex_code']}',
+                    fillcolor=f'#{feature["hex_code"]}',
                     opacity=self.locations_opacity,
                     line={'width': 0},
                     layer='below',
