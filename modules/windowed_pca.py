@@ -622,9 +622,9 @@ class WPCA:
                 self.sample_lst = list(dict.fromkeys(var_file_sample_lst))
 
             # exit if less than 10 samples are specified
-            if len(self.sample_lst) <= 10:
+            if len(self.sample_lst) < 6:
                 log.error_nl(
-                'Please provide at least 10 samples'
+                'Please provide at least 6 samples'
                 )
                 log.newline()
 
