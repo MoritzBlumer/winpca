@@ -96,6 +96,8 @@ class WPCA:
         self.w_idx = None
         self.pct_complete = 0
         self.all_empty = None
+        self.pc_range = 11
+
 
         # instantiate results dict
         self.out_dct = {
@@ -440,7 +442,7 @@ class WPCA:
                 'n_miss': n_miss_arr,
                 'n_var': n_var
             }
-            for i in range(1, 11):
+            for i in range(1, self.pc_range):
                 out[f'pc_{i}'] = pca[0][:, i-1]
                 out[f'pc_{i}_ve'] = round(
                     pca[1].explained_variance_ratio_[i-1]*100, 2
@@ -461,7 +463,7 @@ class WPCA:
                 'n_miss': empty_lst,
                 'n_var': n_var
             }
-            for i in range(1, 11):
+            for i in range(1, self.pc_range):
                 out[f'pc_{i}'] = empty_lst
                 out[f'pc_{i}_ve'] = None
 
@@ -529,7 +531,7 @@ class WPCA:
                 'n_miss': [None for x in eigenvec_arr[:, 0]],
                 'n_var': n_var
             }
-            for i in range(1, 11):
+            for i in range(1, self.pc_range):
                 out[f'pc_{i}'] = eigenvec_arr[:, i-1]
                 out[f'pc_{i}_ve'] = round(pct_exp_arr[i-1], 2)
 
@@ -548,7 +550,7 @@ class WPCA:
                 'n_miss':empty_lst,
                 'n_var': n_var
             }
-            for i in range(1, 11):
+            for i in range(1, self.pc_range):
                 out[f'pc_{i}'] = empty_lst
                 out[f'pc_{i}_ve'] = None
 
@@ -621,13 +623,15 @@ class WPCA:
             if self.sample_lst is None:
                 self.sample_lst = list(dict.fromkeys(var_file_sample_lst))
 
-            # exit if less than 10 samples are specified
+            # exit if less than 6 samples are specified
             if len(self.sample_lst) < 6:
                 log.error_nl(
                 'Please provide at least 6 samples'
                 )
                 log.newline()
 
+            # update PC range if <10 samples
+            if len(self.sample_lst) <10: self.pc_range = len(self.sample_lst)+1
 
             # obtain index positions (returns first hit)
             sample_idx_lst = [

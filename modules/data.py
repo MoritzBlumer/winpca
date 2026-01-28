@@ -20,7 +20,7 @@ class WPCAData:
     '''
     Central container for PCA and associated data, compiles object from
     existing output files (via prefix) or directly from w_pca instance; data
-    can be modified through indluded modifier methods
+    can be modified through included methods
     '''
 
     def __init__(self, prefix, pcs, w_pca_obj=None):
@@ -75,9 +75,10 @@ class WPCAData:
         # ).round(3)
 
         # stats: window index, PCs variance explained, number of variants
+        pc_range = int(((len(out_df.columns) - 7)/2)+1)
         self.stat_df = out_df[
             ['pos', 'w_start', 'w_stop', 'w_size', 'n_var',]
-            + [f'pc_{i}_ve' for i in range(1, 11)]
+            + [f'pc_{i}_ve' for i in range(1, pc_range)]
         ].copy().round(3)
         self.stat_df = self.stat_df.reset_index()
         self.stat_df = self.stat_df.rename(columns={'index': 'w_idx'})
