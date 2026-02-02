@@ -582,7 +582,7 @@ class WPCA:
         # for VCF: read first 10000 lines to check if multiallellic
         if self.file_fmt == 'VCF':
             with read_func(self.variant_file_path, 'rt') as check_gts:
-                rows = [next(check_gts) for _ in range(10000)]
+                rows = [line for _, line in zip(range(10000), check_gts)]
                 rows = [x for x in rows if not x.startswith('#')]
                 alts = [x.split('\t')[4] for x in rows]
                 if any(len(x.split(',')) > 1 for x in alts):
