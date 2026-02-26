@@ -48,7 +48,7 @@ _Please refer to the help messages (winpca {method} -h) or to the [wiki](https:/
 <br />
 
 
-## Preprint
+## Citation
 Blumer LM, Good JM & Durbin R (2025). [WinPCA: A package for windowed principal component analysis](https://doi.org/10.1093/bioinformatics/btaf529). _Bioinformatics_, btaf529.
 
 ## Contact
