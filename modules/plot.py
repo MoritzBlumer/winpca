@@ -263,8 +263,12 @@ class Plot:
         elif self.hex_code_dct:
             self.color_dct = self.hex_code_dct
             if not all(x in self.color_dct.keys() for x in self.group_lst):
+                missing_hex_lst = [
+                    x for x in self.group_lst if x not in self.color_dct.keys()
+                ]
                 log.error_nl(
-                    '-c/--colors: HEX codes missing for one or more groups'
+                     '-c/--colors: HEX codes missing for one or more groups'
+                    f' (please add HEX code for: {",".join(missing_hex_lst)})'
                 )
             elif not all(self.is_hex(x[1:]) for x in self.color_dct.values()) \
                 or not all(len(x) == 7 for x in self.color_dct.values()):
