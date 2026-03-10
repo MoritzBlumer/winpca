@@ -16,7 +16,7 @@ WinPCA can aid the initial exploration of new datasets since no prior grouping o
 ### _Dependencies_
 Please ensure to have these dependencies installed and accessible from your current shell environment: Python packages: [numpy](https://anaconda.org/anaconda/numpy), [pandas](https://anaconda.org/anaconda/pandas), [numba](https://anaconda.org/anaconda/numba), [scikit-allel](https://anaconda.org/conda-forge/scikit-allel), [plotly](https://anaconda.org/plotly/plotly):
 ```
-mamba install numpy pandas numba scikit-allel plotly
+mamba install numpy<2.0 pandas numba scikit-allel plotly
 ```
 
 Additionally, to run WinPCA on genotype likelihood (GL/PL) data: [PCAngsd](https://github.com/Rosemeis/pcangsd) (installation instructions included).
