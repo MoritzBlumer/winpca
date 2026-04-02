@@ -528,7 +528,7 @@ class Plot:
 
             # plot
             self.fig.add_trace(
-                go.Scatter(
+                go.Scattergl(
                     x=x_val_lst,
                     y=y_val_lst,
                     text=hover_str_lst,
@@ -747,7 +747,7 @@ class Plot:
 
             # plot
             self.fig.add_trace(
-                go.Scatter(
+                go.Scattergl(
                     x=x_val_lst,
                     y=y_val_lst,
                     text=hover_str_lst,
