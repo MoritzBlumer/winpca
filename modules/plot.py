@@ -499,10 +499,18 @@ class Plot:
             group_df = self.data_df[self.data_df[self.group_id] == group]
 
             # initiate lists to hold per-sample-per-window x values, y values
-            # and hover data strings
+            # and custom data arrays
             x_val_lst = []
             y_val_lst = []
-            hover_str_lst = []
+            customdata_lst = []
+
+            # pre-compile hover template
+            columns = list(group_df.columns)
+            hover_tmpl_lst = [
+                f"<b>{col}</b>: %{{customdata[{i}]}}<br>" \
+                    for i, col in enumerate(columns)
+            ]
+            hover_tmpl_str = "".join(hover_tmpl_lst) + "<extra></extra>"
 
             # iterate through each individual per group
             for sample in set(group_df['id']):
@@ -510,29 +518,22 @@ class Plot:
                 # subset data
                 sample_df = group_df[group_df['id'] == sample]
 
-                # compile hover text string for each window
-                hover_data = [
-                    ''.join(
-                        [
-                            f'<b>{c}</b>: {row[c]}<br>'
-                            for c in sample_df.columns
-                        ]
-                    ) for i, row in sample_df.iterrows()
-                ]
-
-                # append x, y and hover values (separated by None to isolate
+                # append x, y values (separated by None to isolate
                 # individuals plotted as part of the same trace)
                 x_val_lst += sample_df['pos'].tolist() + [None]
                 y_val_lst += sample_df[self.plot_var_disp].tolist() + [None]
-                hover_str_lst += hover_data + [None]
+
+                # append data to customdata_lst, likewise pad gaps with [None]
+                customdata_lst += sample_df[columns].values.tolist() \
+                    + [[None] * len(columns)]
 
             # plot
             self.fig.add_trace(
                 go.Scattergl(
                     x=x_val_lst,
                     y=y_val_lst,
-                    text=hover_str_lst,
-                    hoverinfo='text',
+                    customdata=customdata_lst,
+                    hovertemplate=hover_tmpl_str,
                     hoverlabel={'font_size': 8},
                     name=list(sample_df[self.group_id])[0],
                     legendgroup=list(sample_df[self.group_id])[0],
@@ -718,10 +719,18 @@ class Plot:
             group_df = self.data_df[self.data_df[self.group_id] == group]
 
             # initiate lists to hold per-sample-per-window x values, y values
-            # and hover data strings
+            # and custom data arrays
             x_val_lst = []
             y_val_lst = []
-            hover_str_lst = []
+            customdata_lst = []
+
+            # pre-compile hover template
+            columns = list(group_df.columns)
+            hover_tmpl_lst = [
+                f"<b>{col}</b>: %{{customdata[{i}]}}<br>" \
+                    for i, col in enumerate(columns)
+            ]
+            hover_tmpl_str = "".join(hover_tmpl_lst) + "<extra></extra>"
 
             # iterate through each individual per group
             for sample in set(group_df['id']):
@@ -729,29 +738,22 @@ class Plot:
                 # subset data
                 sample_df = group_df[group_df['id'] == sample]
 
-                # compile hover text string for each window
-                hover_data = [
-                    ''.join(
-                        [
-                            f'<b>{c}</b>: {row[c]}<br>'
-                            for c in sample_df.columns
-                        ]
-                    ) for i, row in sample_df.iterrows()
-                ]
-
-                # append x, y and hover values (separated by None to isolate
+                # append x, y values (separated by None to isolate
                 # individuals plotted as part of the same trace)
                 x_val_lst += sample_df['genome_pos'].tolist() + [None]
                 y_val_lst += sample_df[self.plot_var_disp].tolist() + [None]
-                hover_str_lst += hover_data + [None]
+
+                # append data to customdata_lst, likewise pad gaps with [None]
+                customdata_lst += sample_df[columns].values.tolist() \
+                    + [[None] * len(columns)]
 
             # plot
             self.fig.add_trace(
                 go.Scattergl(
                     x=x_val_lst,
                     y=y_val_lst,
-                    text=hover_str_lst,
-                    hoverinfo='text',
+                    customdata=customdata_lst,
+                    hovertemplate=hover_tmpl_str,
                     hoverlabel={'font_size': 8},
                     name=list(sample_df[self.group_id])[0],
                     legendgroup=list(sample_df[self.group_id])[0],
@@ -783,13 +785,6 @@ class Plot:
                 # skip if sequence id mismatch
                 if feature['chrom'] not in chrom_lst:
                     log.info_nl(
-                         '-l/--locations: sequence id not found for feature'
-                        f' {feature["chrom"]}:{feature["start"]}-'
-                        f'{feature["end"]} – skipping')
-                    continue
-
-                if feature['chrom'] not in chrom_lst:
-                    log.info(
                          '-l/--locations: sequence id not found for feature'
                         f' {feature["chrom"]}:{feature["start"]}-'
                         f'{feature["end"]} – skipping')
@@ -938,7 +933,7 @@ class Plot:
                 },
                 showlegend=False,
             ),
-            )
+        )
 
         # save image (using self.prefix to determine output prefix)
         if self.run_prefix.endswith('/'):
