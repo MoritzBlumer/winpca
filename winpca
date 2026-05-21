@@ -8,9 +8,11 @@ WinPCA. A package for windowed PC analysis.
 ## IMPORT CONFIG
 from modules import config
 
+## IMPORT PACKAGES
+import os
+
 ## IMPORT MODULES
 from modules.cli import CLI
-from modules.data import WPCAData
 from modules.log import Log
 
 ## INSTANTIATE LOGGER
@@ -37,6 +39,15 @@ def main():
     cli.parse_args()
     args = cli.args
 
+    # control thread usage
+    config.N_THREADS = int((-(-args['n_threads'] // 1)) // 2)
+    os.environ["OMP_NUM_THREADS"] = str(config.N_THREADS)
+    os.environ["OPENBLAS_NUM_THREADS"] = str(config.N_THREADS)
+    os.environ["MKL_NUM_THREADS"] = str(config.N_THREADS)
+
+    # now import core data module
+    from modules.data import WPCAData
+
     # set mode
     mode = args['mode']
 
@@ -44,6 +55,9 @@ def main():
     ## MODE: WINDOWED PCA
 
     if mode == 'pca':
+
+        # assess variant format
+        config.VAR_FMT = args['var_fmt']
 
         # print info
         log.newline()
@@ -55,10 +69,6 @@ def main():
             file_fmt = args['variant_file_path'].split('.')[-2].upper()
         else:
             file_fmt = args['variant_file_path'].split('.')[-1].upper()
-
-        # update n_threads/var_fmt in CONFIG
-        config.N_THREADS = args['n_threads']
-        config.VAR_FMT = args['var_fmt']
 
         # load module & instantiate
         from modules.windowed_pca import WPCA

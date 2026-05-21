@@ -73,7 +73,6 @@ class CLI:
             type=str, default=None,
             help='prefix for this WinPCA analysis')
 
-
     def pca(self):
         '''
         Windowed PCA using scikit-allel when working with called genotypes(GT)
@@ -99,6 +98,11 @@ class CLI:
             help='genomic region in format "chrom:start-end"')
 
         # optional arguments
+        pca_parser.add_argument(
+            '-t', '--threads', dest='n_threads', metavar='\b',
+            required=False, type=int, default=int(config.N_THREADS),
+            help=f'{self.tab}limit the number of worker threads'
+             f' [{config.N_THREADS}]')
         pca_parser.add_argument(
             '-s', '--samples', dest='samples', metavar='\b',
             required=False, type=str, default=None,
@@ -135,11 +139,6 @@ class CLI:
             choices=['GT', 'GL', 'PL'],
             help=f'{self.tab}variant format: GT, GL or PL (GL/PL invoke'
              f' PCAngsd) [{config.VAR_FMT}]')
-        pca_parser.add_argument(
-            '-t', '--threads', dest='n_threads', metavar='\b',
-            required=False, type=int, default=int(config.N_THREADS),
-            help=f'{self.tab}number of threads (multi-threading is only'
-             f' available with PCAngsd, i.e. GL/PL) [{config.N_THREADS}]')
         pca_parser.add_argument(
             '--np', dest='no_pass_filter',
             required=False, action='store_true', default=False,
@@ -245,6 +244,11 @@ class CLI:
 
         # optional arguments
         chromplot_parser.add_argument(
+            '-t', '--threads', dest='n_threads', metavar='\b',
+            required=False, type=int, default=int(config.N_THREADS),
+            help=f'{self.tab}limit the number of worker threads'
+             f' [{config.N_THREADS}]')
+        chromplot_parser.add_argument(
             '-p', '--plot_var', dest='plot_var', metavar='\b',
             required=False, type=str, default=str(config.PCS[0]),
             choices=[str(pc) for pc in config.PCS] + ['het'],
@@ -320,6 +324,11 @@ class CLI:
               ' plotting order')
 
         # positional arguments
+        genomeplot_parser.add_argument(
+            '-t', '--threads', dest='n_threads', metavar='\b',
+            required=False, type=int, default=int(config.N_THREADS),
+            help=f'{self.tab}limit the number of worker threads'
+             f' [{config.N_THREADS}]')
         genomeplot_parser.add_argument(
             '-p', '--plot_var', dest='plot_var', metavar='\b',
             required=False, type=str, default=str(config.PCS[0]),

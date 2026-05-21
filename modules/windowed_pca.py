@@ -6,20 +6,17 @@ Window parser and GT PCA functions.
 ## IMPORT CONFIG
 from . import config
 
-## IMPORT PACKAGES & SET NUMBER OF THREADS FOR PCANGSD
+## IMPORT PACKAGES
 import os
+import sys
+import gzip
+import numpy as np
 if config.VAR_FMT == 'GT':
     import allel
 else:
     from pcangsd.shared import emMAF
     from pcangsd.reader_cy import filterArrays                                 # pylint: disable=E0611
     from pcangsd.covariance import emPCA
-    os.environ["OMP_NUM_THREADS"] = str(config.N_THREADS)
-    os.environ["OPENBLAS_NUM_THREADS"] = str(config.N_THREADS)
-    os.environ["MKL_NUM_THREADS"] = str(config.N_THREADS)
-import sys
-import gzip
-import numpy as np
 
 ## MODULES
 from modules.log import Log
