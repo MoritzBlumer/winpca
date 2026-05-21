@@ -479,6 +479,13 @@ class CLI:
                          ' please change one accordingly'
                     )
 
+        # threads
+        if self.args.get('n_threads'):
+            if self.args['n_threads'] < 3:
+                log.error_nl(
+                        f'-t/--threads: Please provide at least 3 threads'
+                    )
+
         # samples --> sample_lst
         if self.args.get('samples'):
             if ',' in self.args['samples']:
@@ -552,6 +559,7 @@ class CLI:
                      ' not exist'
                 )
 
+        # locations
         if self.args.get('locations_path'):
             if not os.path.exists(self.args['locations_path']):
                 log.error_nl(
