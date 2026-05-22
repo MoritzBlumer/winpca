@@ -41,6 +41,7 @@ class WPCA:
                  pcangsd_em_eig,
                  pcangsd_em_iter,
                  sample_lst,
+                 query_sample_lst,
                  chrom, start, stop,
                  w_size, w_step,
                  gt_min_var_per_w,
@@ -62,6 +63,9 @@ class WPCA:
         self.pcangsd_em_eig = pcangsd_em_eig
         self.pcangsd_em_iter = pcangsd_em_iter
         self.sample_lst = sample_lst
+        self.query_sample_lst = query_sample_lst
+        self.query_sample_idx_lst = None
+        self.ref_sample_idx_lst = None
         self.chrom = chrom
         self.start = start
         self.stop = stop
@@ -87,6 +91,7 @@ class WPCA:
         self.pos = None
         self.win = None
         self.w_gt_arr = None
+        self.w_q_gt_arr = None
         self.w_gl_arr = None
         self.w_pl_arr = None
         self.gl_min_maf_arr = None
@@ -94,7 +99,6 @@ class WPCA:
         self.pct_complete = 0
         self.all_empty = None
         self.pc_range = 11
-
 
         # instantiate results dict
         self.out_dct = {
@@ -203,23 +207,28 @@ class WPCA:
         row_mean_arr = np.nanmean(self.w_gt_arr, axis=1)
 
         # fetch indices of rows/sites WITH missing call(s)
-        miss_mask_arr = np.isnan(self.w_gt_arr)
+        mask = np.isnan(self.w_gt_arr)
 
         # replace NaN with row/site means
-        self.w_gt_arr[miss_mask_arr] = np.take(
-            row_mean_arr, np.where(miss_mask_arr)[0]
+        self.w_gt_arr[mask] = np.take(
+            row_mean_arr, np.where(mask)[0]
         )
 
+        # impute query samples independently in projection mode
+        if self.query_sample_lst:
+            row_mean_arr = np.nanmean(self.w_q_gt_arr, axis=1)
+            mask = np.isnan(self.w_q_gt_arr)
+            self.w_q_gt_arr[mask] = np.take(
+                row_mean_arr, np.where(mask)[0]
+            )
 
     def gt_drop_missing_sites(self):
         '''
         remove any site with at least one missing GT call
         '''
 
-        # fetch indices of rows/sites WITHOUT missing call(s)
+        # keep indices of rows/sites WITHOUT missing call(s)
         mask = ~np.isnan(self.w_gt_arr).any(axis=1)
-
-        # drop those rows/sites
         self.w_gt_arr = self.w_gt_arr[mask]
 
 
@@ -228,11 +237,26 @@ class WPCA:
         Drop SNPs with minor allele frequency below specified value
         '''
 
-        # count # GTs per row/site (np.sum counts True), *2 because diploid
-        allele_counts_arr = np.sum(~np.isnan(self.w_gt_arr), axis=1) * 2
+        # regular mode
+        if not self.query_sample_lst:
 
-        # count # alleles per row/site
-        allele_sums_arr = np.nansum(self.w_gt_arr, axis=1)
+            # count # GTs per row/site (np.sum counts True), *2 because diploid
+            allele_counts_arr = np.sum(~np.isnan(self.w_gt_arr), axis=1) * 2
+
+            # count # alleles per row/site
+            allele_sums_arr = np.nansum(self.w_gt_arr, axis=1)
+
+        # projection mode
+        else:
+
+            # extract reference samples
+            ref_gt_arr = self.w_gt_arr[:, self.ref_sample_idx_lst]
+            
+            # count # GTs per row/site (np.sum counts True), *2 because diploid
+            allele_counts_arr = np.sum(~np.isnan(ref_gt_arr), axis=1) * 2
+            
+            # count # alleles per row/site
+            allele_sums_arr = np.nansum(ref_gt_arr, axis=1)
 
         # calculate allel frequencies and multiple with -1 if AF > 0.5 (because
         # input data may not be polarized by major/minor allel)
@@ -248,16 +272,17 @@ class WPCA:
         Remove POS info, convert to numpy array and apply target function or
         return empty array if there are no variants
         '''
+
         # non-empty: trim off pos info, convert to numpy arr, drop missing
         # sites or mean impute, apply min_maf filter
         if self.win:
             self.w_gt_arr = np.array(
                 [x[1:] for x in self.win], dtype=np.float32
-                )
+            )
 
         # empty: convert to empty numpy arr
         else:
-            self.w_gt_arr = np.empty((0,0))
+            self.w_gt_arr = np.empty((0,0), dtype=np.float32)
 
         # call target function
         self.pca()
@@ -382,7 +407,9 @@ class WPCA:
         '''
         Apply min_maf filter, drop rows/sites with missing call(s) OR mean
         impute, conduct PCA, but if (n_var < min_var_per_w) generate
-        empty/dummy output instead
+        empty/dummy output instead. In projection mode separate query from 
+        reference samples before imputation or after removing variants with 
+        missing calls. Then run PCA on reference samples and then project query samples to reference PCA space
         '''
 
         # get window mid for X value
@@ -406,9 +433,16 @@ class WPCA:
 
         # mean impute
         if self.gt_mean_impute:
+
+            # separate query samples in projection mode
+            if self.query_sample_lst:
+                self.w_q_gt_arr = self.w_gt_arr[:, self.query_sample_idx_lst]
+                self.w_gt_arr = self.w_gt_arr[:, self.ref_sample_idx_lst]
+
+            # impute
             self.gt_mean_imputation()
 
-        # drop missing sites (& re-count)
+        # or drop missing sites (& re-count)
         else:
 
             # drop missing sites
@@ -417,17 +451,59 @@ class WPCA:
             # re-count count remaining variants
             n_var = self.w_gt_arr.shape[0]
 
+            # separate query samples in projection mode
+            if self.query_sample_lst:
+                self.w_q_gt_arr = self.w_gt_arr[:, self.query_sample_idx_lst]
+                self.w_gt_arr = self.w_gt_arr[:, self.ref_sample_idx_lst]
+
         # if # variants passes specified threshold
         if n_var >= self.gt_min_var_per_w:
 
-            # pca
-            pca = allel.pca(
-                self.w_gt_arr,
-                n_components=10,
-                copy=True,
-                scaler='patterson',
-                ploidy=2,
-            )
+            # regular PCA with all samples
+            if not self.query_sample_lst:
+
+                # pca
+                pca = allel.pca(
+                    self.w_gt_arr,
+                    n_components=10,
+                    copy=True,
+                    scaler='patterson',
+                    ploidy=2,
+                )
+
+            # project query samples to ref PCA space
+            else:
+
+                # pca
+                pca = allel.pca(
+                    self.w_gt_arr,
+                    n_components=10,
+                    copy=True,
+                    scaler='patterson',
+                    ploidy=2,
+                )
+
+                # decompose ref PCA object
+                ref_coords = pca[0]
+                ref_model = pca[1]
+
+                # project query samples
+                query_coords = ref_model.transform(self.w_q_gt_arr)
+
+                # create empty array with dimensions (n_ref + n_query) * n_pcs
+                out_coords = np.zeros(
+                    (
+                        len(self.sample_lst),
+                        ref_coords.shape[1]
+                    ),
+                )
+
+                # re-assemble ref and projected (query) output
+                out_coords[self.ref_sample_idx_lst, :] = ref_coords
+                out_coords[self.query_sample_idx_lst, :] = query_coords
+
+                # Replace pca tuple for downstream compatibility
+                pca = (out_coords, ref_model)
 
             # compile to output
             out = {
@@ -646,7 +722,25 @@ class WPCA:
                     sample_idx_lst = [[i, i+1, i+2] for i in sample_idx_lst]
                 sample_idx_lst = [x for i in sample_idx_lst for x in i]
 
+        # query/projection mode
+        if self.query_sample_lst:
 
+            # error if specified query samples are missing
+            missing_qid_lst = \
+                [x for x in self.query_sample_lst if x not in self.sample_lst]
+            if len(missing_qid_lst) > 0:
+                log.error_nl(
+                    f'-q/--query_samples: {", ".join(missing_qid_lst)} not'
+                     ' found in input samples'
+                )
+
+            # fetch query/reference sample ID index lists
+            self.query_sample_idx_lst = \
+                [self.sample_lst.index(x) for x in self.query_sample_lst]
+            r_sample_lst = \
+                [x for x in self.sample_lst if x not in self.query_sample_lst]
+            self.ref_sample_idx_lst = \
+                [self.sample_lst.index(x) for x in r_sample_lst]
 
         # initiate first window
         self.w_start = self.start

@@ -9,7 +9,7 @@ WinPCA. A package for windowed PC analysis.
 from modules import config
 
 ## IMPORT PACKAGES
-import os
+import os                                                                      # pylint: disable=C0411
 
 ## IMPORT MODULES
 from modules.cli import CLI
@@ -80,6 +80,7 @@ def main():
             pcangsd_em_eig = args['pcangsd_em_eig'],
             pcangsd_em_iter = args['pcangsd_em_iter'],
             sample_lst=args['sample_lst'],
+            query_sample_lst=args['query_sample_lst'],
             chrom=args['chrom'],
             start=args['start'],
             stop=args['end'],
@@ -94,7 +95,7 @@ def main():
             min_maf=args['min_maf'],
             x_mode=args['x_mode'],
             n_threads=args['n_threads'],
-            )
+        )
 
         # run, parse and write output
         wpca.window_parser()

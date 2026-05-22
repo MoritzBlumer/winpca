@@ -128,6 +128,14 @@ class CLI:
             help=f'{self.tab}sign polarization strategy: auto, guide_samples'
              f' or skip [{config.POL_MODE}]')
         pca_parser.add_argument(
+            '-q', '--query_samples', dest='query_samples', metavar='\b',
+            required=False, type=str, default=None,
+            help='comma-separated list of samples OR file with one sample'
+              ' ID per line that will be projected onto the PCA space'
+              ' computed from the remaining samples (projection is only '
+              ' supported with GT input and projection sample IDs must be a'
+              ' subset of the input samples')
+        pca_parser.add_argument(
             '-g', '--guide_samples', dest='guide_samples', metavar='\b',
             required=False, type=str, default=None,
             help='one or more (comma-separated) samples to guide PC'
@@ -413,6 +421,12 @@ class CLI:
                  '-c/--colors: -g/--groups is required to set specify'
                  ' group-specificcolors'
             )
+        if self.args.get('query_samples') \
+            and self.args.get('var_fmt') != 'GT':
+            log.error_nl(
+                 '-q/--query_samples: projection is only supported with called'
+                 ' genotype (GT) input'
+            )
 
         # variant_file_path
         if self.args.get('variant_file_path'):
@@ -513,6 +527,36 @@ class CLI:
                 )
         else:
             self.args['sample_lst'] = None
+
+        # query_samples --> query_sample_lst
+        if self.args.get('query_samples'):
+            if ',' in self.args['query_samples']:
+                self.args['query_sample_lst'] \
+                    = self.args['query_samples'].split(',')
+            else:
+                if not os.path.exists(self.args['query_samples']):
+                    log.error_nl(
+                        f'-q/--query_samples: {self.args["query_samples"]}:'
+                         'file does not exist'
+                    )
+                else:
+                    self.args['query_sample_lst'] = []
+                    with open(self.args['query_samples'], 'r') as sample_file:
+                        for line in sample_file:
+                            self.args['query_sample_lst'].append(
+                                line.strip().split('\t')[0]
+                            )
+            if len(set(self.args['query_sample_lst'])) \
+                < len(self.args['query_sample_lst']):
+                seen, dups = set(), set()
+                for s_id in self.args['query_sample_lst']:
+                    dups.add(s_id) if s_id in seen else seen.add(s_id)
+                log.error_nl(
+                     '-q/--query_samples: duplicate IDs found:'
+                    f' {", ".join(dups)}'
+                )
+        else:
+            self.args['query_sample_lst'] = None
 
         # guide_samples --> guide_sample_lst
         if self.args.get('guide_samples'):
