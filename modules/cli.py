@@ -530,22 +530,22 @@ class CLI:
 
         # query_samples --> query_sample_lst
         if self.args.get('query_samples'):
-            if ',' in self.args['query_samples']:
-                self.args['query_sample_lst'] \
-                    = self.args['query_samples'].split(',')
+            if os.path.exists(self.args['query_samples']):
+                self.args['query_sample_lst'] = []
+                with open(self.args['query_samples'], 'r') as sample_file:
+                    for line in sample_file:
+                        self.args['query_sample_lst'].append(
+                            line.strip().split('\t')[0]
+                        )
             else:
-                if not os.path.exists(self.args['query_samples']):
+                try:
+                    self.args['query_sample_lst'] \
+                        = self.args['query_samples'].split(',')
+                except:
                     log.error_nl(
                         f'-q/--query_samples: {self.args["query_samples"]}:'
                          'file does not exist'
-                    )
-                else:
-                    self.args['query_sample_lst'] = []
-                    with open(self.args['query_samples'], 'r') as sample_file:
-                        for line in sample_file:
-                            self.args['query_sample_lst'].append(
-                                line.strip().split('\t')[0]
-                            )
+                    )                    
             if len(set(self.args['query_sample_lst'])) \
                 < len(self.args['query_sample_lst']):
                 seen, dups = set(), set()
