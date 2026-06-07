@@ -216,7 +216,6 @@ class WPCA:
 
         # impute query samples independently in projection mode
         if self.query_sample_lst:
-            row_mean_arr = np.nanmean(self.w_q_gt_arr, axis=1)
             mask = np.isnan(self.w_q_gt_arr)
             self.w_q_gt_arr[mask] = np.take(
                 row_mean_arr, np.where(mask)[0]
@@ -409,7 +408,8 @@ class WPCA:
         impute, conduct PCA, but if (n_var < min_var_per_w) generate
         empty/dummy output instead. In projection mode separate query from 
         reference samples before imputation or after removing variants with 
-        missing calls. Then run PCA on reference samples and then project query samples to reference PCA space
+        missing calls. Then run PCA on reference samples and then project 
+        query samples to reference PCA space
         '''
 
         # get window mid for X value
