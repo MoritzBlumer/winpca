@@ -499,6 +499,8 @@ class CLI:
                 log.error_nl(
                         f'-t/--threads: Please provide at least 3 threads'
                     )
+        else:
+            self.args['n_threads'] = 2
 
         # samples --> sample_lst
         if self.args.get('samples'):
