@@ -157,8 +157,9 @@ class Plot:
 
             # read metadata and print error message if there are non-unique IDs
             self.metadata_df = pd.read_csv(
-                self.metadata_path, sep='\t', index_col=0, dtype=str
+                self.metadata_path, sep='\t', index_col=0, dtype=str,
             )
+            self.metadata_df.index = self.metadata_df.index.astype(str)
             if len(self.metadata_df.index) != len(set(self.metadata_df.index)):
                 log.error_nl('-m/--metadata: metadata file contains'
                           ' non-unique sample IDs')
