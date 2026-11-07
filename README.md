@@ -15,6 +15,7 @@ WinPCA can aid the initial exploration of new datasets since no prior grouping o
 
 ## mamba/conda
 
+Simplest install with mamba or conda:
 ```
 mamba install -c conda-forge -c bioconda winpca
 ```
