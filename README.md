@@ -2,7 +2,7 @@
 # _WinPCA_
 
 A package for windowed principal component analysis.
-WinPCA performs principal component analyses (PCA) in sliding windows along chromosomes. Both hard-called genotypes (input: VCF or TSV) or genotype likelihoods (input: VCF, TSV or BEAGLE) encoding **biallellic SNPs** are accepted. WinPCA uses [scikit-allel](https://scikit-allel.readthedocs.io/en/stable/stats/decomposition.html?highlight=pca) to perfom PCAs on genotype data and [PCAngsd](https://github.com/Rosemeis/pcangsd) methods for genotype likelihood (GL, PL) data.
+WinPCA performs principal component analyses (PCA) in sliding windows along chromosomes. Both hard-called genotypes (input: VCF or TSV) and genotype likelihoods (input: VCF, TSV or BEAGLE) encoding **biallelic SNPs** are accepted. WinPCA uses [scikit-allel](https://scikit-allel.readthedocs.io/en/stable/stats/decomposition.html?highlight=pca) to perform PCAs on genotype data and [PCAngsd](https://github.com/Rosemeis/pcangsd) methods for genotype likelihood (GL, PL) data.
 
 WinPCA can aid the initial exploration of new datasets since no prior grouping of input samples is necessary to visualize genetic structure. It has also been used to [identify chromosome-scale inversions in cichlids and to visualize the recombination landscape in a species cross](https://www.biorxiv.org/content/10.1101/2024.07.28.605452v2.full) (Fig. 2) or to [identify ancestry tracts in a hybrid mouse](https://www.biorxiv.org/content/10.1101/2024.08.31.610610v2.full) (Fig. 6).
 
@@ -13,20 +13,28 @@ WinPCA can aid the initial exploration of new datasets since no prior grouping o
 
 # Installation
 
-### _Dependencies_
-Please ensure to have these dependencies installed and accessible from your current shell environment: Python packages: [numpy](https://anaconda.org/anaconda/numpy), [pandas](https://anaconda.org/anaconda/pandas), [numba](https://anaconda.org/anaconda/numba), [scikit-allel](https://anaconda.org/conda-forge/scikit-allel), [plotly](https://anaconda.org/plotly/plotly):
+## mamba/conda
+
 ```
-mamba install numpy=1.25 pandas numba scikit-allel plotly
+mamba install -c conda-forge -c bioconda winpca
 ```
 
-Additionally, to run WinPCA on genotype likelihood (GL/PL) data: [PCAngsd](https://github.com/Rosemeis/pcangsd) (installation instructions included).
+## git
+
+### _Dependencies_
+Please ensure to have these dependencies installed and accessible from your current shell environment: Python packages: [numpy](https://anaconda.org/anaconda/numpy), [pandas](https://anaconda.org/anaconda/pandas), [scikit-allel](https://anaconda.org/conda-forge/scikit-allel), [plotly](https://anaconda.org/plotly/plotly):
+```
+mamba install numpy pandas scikit-allel "plotly>=6"
+```
+
+Additionally, to run WinPCA on genotype likelihood (GL/PL) data: [PCAngsd](https://github.com/Rosemeis/pcangsd) (installation instructions included), and to render PNG/PDF/SVG plots, [kaleido](https://anaconda.org/channels/conda-forge/packages/python-kaleido/overview).
 <br />
 <br />
 
 ### _Obtain WinPCA_
 ```
 git clone https://github.com/MoritzBlumer/winpca.git  # clone github repository
-chmod +x winpca/winpca                                # make excutable
+chmod +x winpca/winpca                                # make exceutable
 ```
 <br />
 
@@ -35,7 +43,7 @@ _Minimal command line to visualize PC 1 along a chromosome (using GT data from a
 <br />
 
 ```
-# windowed PCA with default settings
+# windowed PCA with default settings (after adding winpca to $PATH)
 winpca pca PREFIX VCF_PATH CHROM_NAME:1-CHROM_SIZE
 
 # make a plot of principal component 1 and color by inversion state

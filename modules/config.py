@@ -11,10 +11,11 @@ VAR_FMT = 'GT'             # variant type (one of 'GT', 'GL', 'PL')
 MIN_MAF = 0.01             # minor allele frequency threshold per window
 W_SIZE = 1000000           # window size in bp
 W_STEP = 10000             # step size in bp
-N_THREADS = 6              # # of threads
+N_THREADS = 4              # # of threads
 
 # winpca polarize
-POL_MODE = 'auto'          # polarization mode ('auto' or 'guide_samples')
+POL_MODE = 'global'        # polarization mode ('adaptive', 'guide_samples',
+                           # 'local' or 'global')
 
 # chromplot + genomeplot
 PLOT_FMT = 'HTML'          # output  format (one of 'HTML', 'PDF', 'SVG', 'PNG)
@@ -37,7 +38,14 @@ GT_MEAN_IMPUTE = True      # mean-impute missing genotypes
 PROC_TRAIL_TRUNC_W = True  # process truncated trailing window if present
 
 # polarize
-N_PREV_WINDOWS = 5         # # of previous windows to use for polarization
+N_PREV_WINDOWS = 5         # # of previous windows used in adaptive polarization
+N_DRAWS_LOCAL = 10         # # of draws of 64 individuals in local ML model
+FLIP_THRESHOLD_LOCAL = 0.5 # threshold to trigger sign flip in local ML model
+WEIGHTS_LOCAL_PATH = \
+  'ml_weights/local.npz'   # local ML model weights
+WEIGHTS_GLOBAL_PATH = \
+  'ml_weights/global.npz'  # global ML model weights
+EPSILON = 1e-12            # small value preventing division-by-zero errors
 
 # chromplot
 CHROMPLOT_W = 1200         # plot width in pixels

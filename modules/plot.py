@@ -14,7 +14,7 @@ import plotly.colors as p_colors
 from . import config
 
 # MODULES
-from modules.log import Log
+from .log import Log
 
 ## INSTANTIATE LOGGER
 log = Log()
@@ -84,6 +84,8 @@ class Plot:
         self.group_id = None
         self.group_lst = None
         self.color_dct = None
+        self.sample_df = pd.DataFrame()
+        self.hover_dct = {}
         self.fig = None
 
         # reformat plot_var and set display name
@@ -140,17 +142,16 @@ class Plot:
     def annotate(self):
         '''
         Annotate per-sample data with a metadata file if supplied, otherwise
-        just reformat for plotting function
+        just reformat and compile a per sample table for plotting functions
         '''
 
-        # fetch sample names and order (=data_df column names)
+        # fetch sample names and order
         sample_lst = list(self.data_df.columns)
 
-        # transpose data_df
-        self.data_df = self.data_df.T
-
-        # initiate id_vars_lst for hover display (id, chrom are default)
-        id_var_lst = ['id', 'chrom']
+        # initiate per-sample table with id and chrom
+        self.sample_df = pd.DataFrame(
+            {'id': sample_lst, 'chrom': self.chrom}, index=sample_lst,
+        )
 
         # read metadata if provided, do sanity checks and use for annotation
         if self.metadata_path:
@@ -174,35 +175,16 @@ class Plot:
                 log.error_nl('-m/--metadata: one or more sample IDs are missing'
                           ' in the provided metadata file')
 
-            # add metadata columns to data_df
+            # add metadata columns to sample_df
             for column_name in self.metadata_df.columns:
-                self.data_df[column_name] = list(self.metadata_df[column_name])
+                self.sample_df[column_name] = list(
+                    self.metadata_df[column_name]
+                )
 
-            # add metadata column names to id_var_lst
-            id_var_lst += list(self.metadata_df.columns)
+        # replace missing metadata with 'NA' for plotting (hover display)
+        self.sample_df = self.sample_df.fillna('NA')
 
-        # add id (from index) and chrom columns
-        self.data_df['id'] = list(self.data_df.index)
-        self.data_df['chrom'] = self.chrom
-
-        # replace numpy NaN with 'NA' for plotting (hover_data display)
-        self.data_df = self.data_df.replace(np.nan, 'NA')
-
-        # convert to long format for plotting
-        self.data_df = pd.melt(
-            self.data_df,
-            id_vars=id_var_lst,
-            var_name='pos',
-            value_name=self.plot_var_disp,
-        )
-
-
-    def set_colors(self):
-        '''
-        Parse per-sample plot color specifications and compile color_dct
-        '''
-
-        # fetch group_id (=color_by) if specified, else default to 'id'
+        # fetch group_id if specified, else use 'id' as group
         self.group_id = self.color_by if not self.color_by is None else 'id'
 
         # check if group exist in metadata column names
@@ -213,8 +195,94 @@ class Plot:
                  ' in the specified metadata file (-m/--metadata)'
             )
 
+        # divide hover data into main (id, chrom and group, which are treated
+        # separately) and remaining columns (core)
+        main_hover_col_lst = ['id', 'chrom', self.group_id]
+        core_hover_col_lst = [
+            x for x in self.sample_df.columns if x not in main_hover_col_lst
+        ]
+
+        # initialize hover data dict
+        self.hover_dct = {}
+
+        # traverse sample_df group-wise
+        for group, group_df in self.sample_df.groupby(self.group_id):
+
+            # compile one hover trace per group: metadata that are shared
+            # within a group will be passed through hover template, others
+            # stored as per sample hover text; id is always per sample (unless
+            # no group specified)
+            text_col_lst = ['id'] if self.group_id != 'id' else []
+            hover_tmpl_str = f'<b>{self.group_id}</b>: {group}<br>'
+            for col in core_hover_col_lst:
+                if group_df[col].nunique() == 1:
+                    hover_tmpl_str += \
+                        f'<b>{col}</b>: {group_df[col].iloc[0]}<br>'
+                else:
+                    text_col_lst.append(col)
+
+            # compile per sample hover text and add placeholder to template
+            if text_col_lst == ['id']:
+                hover_text_lst = list(group_df.index)
+                hover_tmpl_str = '<b>id</b>: %{text}<br>' + hover_tmpl_str
+            elif text_col_lst:
+                hover_text_lst = [
+                    '<br>'.join(
+                        f'<b>{col}</b>: {group_df.at[smp, col]}'
+                        for col in text_col_lst
+                    )
+                    for smp in group_df.index
+                ]
+                hover_tmpl_str = '%{text}<br>' + hover_tmpl_str
+            else:
+                hover_text_lst = None
+
+            # store per group: sample id (for plotting order), per sample hover
+            # text, hover template (chrom, pos and value are added in the plot
+            # functions)
+            self.hover_dct[group] = {
+                'sample_lst': list(group_df.index),
+                'text_lst': hover_text_lst,
+                'hover_str': hover_tmpl_str,
+            }
+
+
+    def line_arrays(self, group, x_arr, y_df):
+        '''
+        Compile x values, y values and per-point hover text for one plotly
+        trace holding all samples of a group (-g) or per id
+        '''
+
+        # fetch samples belonging to group and per-sample hover text
+        sample_lst = self.hover_dct[group]['sample_lst']
+        text_lst = self.hover_dct[group]['text_lst']
+        n_win = len(x_arr)
+
+        # compile array holding all per sample values separated by NA
+        y_arr = np.full((len(sample_lst), n_win + 1), np.nan, dtype=np.float32)
+        y_arr[:, :n_win] = y_df[sample_lst].to_numpy(dtype=np.float32).T
+        
+
+        # repeat window positions per sample
+        x_rep_arr = np.tile(np.append(x_arr, x_arr[-1]), len(sample_lst))
+
+        # repeat hover text per data point
+        if text_lst is not None:
+            text_lst = [x for x in text_lst for _ in range(n_win + 1)]
+
+        # flatten value array
+        y_arr = y_arr.ravel()
+
+        return x_rep_arr, y_arr, text_lst
+
+
+    def set_colors(self):
+        '''
+        Parse per-sample plot color specifications and compile color_dct
+        '''
+
         # get list of groups/ids
-        self.group_lst = sorted(set(self.data_df[self.group_id]))
+        self.group_lst = sorted(set(self.sample_df[self.group_id]))
 
         # set color_dct for continuous colors
         if self.numeric:
@@ -250,13 +318,13 @@ class Plot:
             self.group_lst = \
                 [
                     x for x in self.group_lst \
-                        if self.na_lst
+                        if x in self.na_lst
                 ] \
                 + sorted(
                 [
                         x for x in self.group_lst \
                             if x not in self.na_lst
-                ])
+                ], key=float)
 
         # define colors based on plotly default colors or specified HEX codes;
         # print error messages if HEX codes are missing for specified groups or
@@ -278,7 +346,9 @@ class Plot:
                     ' refer to the documentation')
             else:
                 # set color_dct keys as group_lst to set plotting order
-                self.group_lst = list(self.color_dct.keys())
+                self.group_lst = [
+                    x for x in self.color_dct.keys() if x in self.group_lst
+                ]
 
         # use default colors
         else:
@@ -304,7 +374,6 @@ class Plot:
             self.locations_path, sep='\t', dtype=str, header=None,
         )
 
-
         # parse columns, exit if < 3 and set default color if unspecified;
         # use default color if at least one HEX code is invalid and print info
         if locations_df.shape[1] < 3:
@@ -319,8 +388,8 @@ class Plot:
             locations_df.columns = ['chrom', 'start', 'end', 'hex_code']
             locations_df['hex_code'] = locations_df['hex_code'].str.replace(
                 '#', '', regex=False
-            )
-            if not all(self.is_hex(x[1:]) for x in locations_df['hex_code']) \
+            ).fillna(self.locations_color)
+            if not all(self.is_hex(x) for x in locations_df['hex_code']) \
                 or not all(len(x) == 6 for x in locations_df['hex_code']):
                 locations_df['hex_code'] = self.locations_color
                 log.info(
@@ -493,53 +562,36 @@ class Plot:
                     layer='below',
                 )
 
+        # encode position as 32 bit int if possible, otherwise 64 bit float
+        win_arr = self.data_df.index.to_numpy()
+        win_arr = win_arr.astype(
+            np.uint32 if win_arr.max() < 2**32 else np.float64
+        )
+
         # plot each specified group (-g) separately (or 'id' if unspecified)
         for group in self.group_lst:
 
-            # subset data to group
-            group_df = self.data_df[self.data_df[self.group_id] == group]
-
-            # initiate lists to hold per-sample-per-window x values, y values
-            # and custom data arrays
-            x_val_lst = []
-            y_val_lst = []
-            customdata_lst = []
-
-            # pre-compile hover template
-            columns = list(group_df.columns)
-            hover_tmpl_lst = [
-                f"<b>{col}</b>: %{{customdata[{i}]}}<br>" \
-                    for i, col in enumerate(columns)
-            ]
-            hover_tmpl_str = "".join(hover_tmpl_lst) + "<extra></extra>"
-
-            # iterate through each individual per group
-            for sample in set(group_df['id']):
-
-                # subset data
-                sample_df = group_df[group_df['id'] == sample]
-
-                # append x, y values (separated by None to isolate
-                # individuals plotted as part of the same trace)
-                x_val_lst += sample_df['pos'].tolist() + [None]
-                y_val_lst += sample_df[self.plot_var_disp].tolist() + [None]
-
-                # append data to customdata_lst, likewise pad gaps with [None]
-                customdata_lst += sample_df[columns].values.tolist() \
-                    + [[None] * len(columns)]
+            # compile x/y values and hover text for all samples per group
+            x_arr, y_arr, text_lst = self.line_arrays(
+                group, win_arr, self.data_df,
+            )
 
             # plot
             self.fig.add_trace(
                 go.Scattergl(
-                    x=x_val_lst,
-                    y=y_val_lst,
-                    customdata=customdata_lst,
-                    hovertemplate=hover_tmpl_str,
+                    x=x_arr,
+                    y=y_arr,
+                    text=text_lst,
+                    hovertemplate=self.hover_dct[group]['hover_str'] \
+                        + f'<b>chrom</b>: {self.chrom}<br>' \
+                        + '<b>pos</b>: %{x:.0f}<br>' \
+                        + f'<b>{self.plot_var_disp}</b>: %{{y:.3f}}' \
+                        + '<extra></extra>',
                     hoverlabel={'font_size': 8},
-                    name=list(sample_df[self.group_id])[0],
-                    legendgroup=list(sample_df[self.group_id])[0],
+                    name=str(group),
+                    legendgroup=str(group),
                     mode='lines',
-                    line={'color': self.color_dct[group]},
+                    line={'color': self.color_dct[group], 'width': .7},
                     connectgaps=False,
                     showlegend=show_legend,
                 ),
@@ -562,10 +614,6 @@ class Plot:
         self.fig.update_traces(
             row=1, col=1,
             line={'width': .7, 'color': 'lightgrey'},
-        )
-        self.fig.update_traces(
-            row=2, col=1,
-            line={'width': .7},
         )
 
         # format x axis
@@ -605,7 +653,7 @@ class Plot:
         # plot colorscale instead of per-sample legend for numeric metadata
         if self.numeric:
             val_lst = [
-                float(x) for x in self.data_df[self.color_by] \
+                float(x) for x in self.sample_df[self.color_by] \
                     if not x in self.na_lst
             ]
             min_val = min(val_lst)
@@ -647,7 +695,7 @@ class Plot:
         '''
 
         # import data module
-        from modules.data import WPCAData
+        from .data import WPCAData
 
 
         # LOAD & PREPARE DATA
@@ -655,6 +703,8 @@ class Plot:
         # initite lists to hold data_dfs from different chromosomes to be
         # concatenated, end and mid of chromosome positions for plot formatting
         data_df_lst = []
+        genome_pos_lst = []
+        win_pos_lst = []
         chrom_lst = []
         chrom_min_lst = []
         chrom_max_lst = []
@@ -678,28 +728,40 @@ class Plot:
             if self.interval:
                 self.data_df = self.subset(self.data_df, self.interval)
 
-            # annotate per-sample data if metadata were supplied
+            # chromosome name and window positions
             self.chrom = run_id
-            self.annotate()
+            pos_arr = self.data_df.index.to_numpy()
 
             # append chrom, chrom mid/end positions to lists
             chrom_lst.append(run_id)
-            chrom_min_lst.append(min(self.data_df['pos']))
-            chrom_max_lst.append(max(self.data_df['pos']))
-            chrom_end_lst.append(offset + max(self.data_df['pos']))
-            chrom_mid_lst.append(offset + self.data_df['pos'].median())
+            chrom_min_lst.append(pos_arr.min())
+            chrom_max_lst.append(pos_arr.max())
+            chrom_end_lst.append(offset + pos_arr.max())
+            chrom_mid_lst.append(offset + np.median(pos_arr))
 
-            # add genome-wide plotting position as data_df column
-            self.data_df['genome_pos'] = self.data_df['pos'] + offset
+            # genome-wide plotting positions and chromosomal positions (hover)
+            genome_pos_lst.append(pos_arr + offset)
+            win_pos_lst.append(pos_arr)
 
             # update offset
-            offset += max(self.data_df['pos'])
+            offset += pos_arr.max()
 
             # append data_df to list
             data_df_lst.append(self.data_df)
 
-        # concatenate chromosomal data_dfs
+        # concatenate chromosome data and annotate
         self.data_df = pd.concat(data_df_lst)
+        self.annotate()
+
+        # encode position as 32 bit int if possible, otherwise 64 bit float
+        genome_pos_arr = np.concatenate(genome_pos_lst)
+        genome_pos_arr = genome_pos_arr.astype(
+            np.uint32 if genome_pos_arr.max() < 2**32 else np.float64
+        )
+        win_pos_arr = np.concatenate(win_pos_lst)
+        win_pos_arr = win_pos_arr.astype(
+            np.uint32 if win_pos_arr.max() < 2**32 else np.float64
+        )
 
         # set per-sample plot colors
         self.set_colors()
@@ -714,56 +776,53 @@ class Plot:
         show_legend = not self.numeric
 
         # plot each specified group (-g) separately (or 'id' if unspecified)
-        for group in self.group_lst:
+        start = 0
+        for idx, chrom in enumerate(chrom_lst):
 
-            # subset data to group
-            group_df = self.data_df[self.data_df[self.group_id] == group]
+            # find current chromosome end
+            stop = start + len(win_pos_lst[idx])
 
-            # initiate lists to hold per-sample-per-window x values, y values
-            # and custom data arrays
-            x_val_lst = []
-            y_val_lst = []
-            customdata_lst = []
+            for group in self.group_lst:
 
-            # pre-compile hover template
-            columns = list(group_df.columns)
-            hover_tmpl_lst = [
-                f"<b>{col}</b>: %{{customdata[{i}]}}<br>" \
-                    for i, col in enumerate(columns)
-            ]
-            hover_tmpl_str = "".join(hover_tmpl_lst) + "<extra></extra>"
+                # compile x/y values and hover text for all samples per group
+                x_arr, y_arr, text_lst = self.line_arrays(
+                    group,
+                    genome_pos_arr[start:stop],
+                    self.data_df.iloc[start:stop],
+                )
 
-            # iterate through each individual per group
-            for sample in set(group_df['id']):
+                # fetch chromosome positions for hover display
+                chrom_pos_arr = win_pos_arr[start:stop]
+                pos_arr = np.tile(
+                    np.append(chrom_pos_arr, chrom_pos_arr[-1]),
+                    len(self.hover_dct[group]['sample_lst']),
+                )
 
-                # subset data
-                sample_df = group_df[group_df['id'] == sample]
+                # plot
+                self.fig.add_trace(
+                    go.Scattergl(
+                        x=x_arr,
+                        y=y_arr,
+                        text=text_lst,
+                        customdata=pos_arr,
+                        hovertemplate=self.hover_dct[group]['hover_str'] \
+                            + f'<b>chrom</b>: {chrom}<br>' \
+                            + '<b>pos</b>: %{customdata:.0f}<br>' \
+                            + '<b>genome_pos</b>: %{x:.0f}<br>' \
+                            + f'<b>{self.plot_var_disp}</b>: %{{y:.3f}}' \
+                            + '<extra></extra>',
+                        hoverlabel={'font_size': 8},
+                        name=str(group),
+                        legendgroup=str(group),
+                        mode='lines',
+                        line={'color': self.color_dct[group], 'width': .7},
+                        connectgaps=False,
+                        showlegend=show_legend and idx == 0,
+                    )
+                )
 
-                # append x, y values (separated by None to isolate
-                # individuals plotted as part of the same trace)
-                x_val_lst += sample_df['genome_pos'].tolist() + [None]
-                y_val_lst += sample_df[self.plot_var_disp].tolist() + [None]
-
-                # append data to customdata_lst, likewise pad gaps with [None]
-                customdata_lst += sample_df[columns].values.tolist() \
-                    + [[None] * len(columns)]
-
-            # plot
-            self.fig.add_trace(
-                go.Scattergl(
-                    x=x_val_lst,
-                    y=y_val_lst,
-                    customdata=customdata_lst,
-                    hovertemplate=hover_tmpl_str,
-                    hoverlabel={'font_size': 8},
-                    name=list(sample_df[self.group_id])[0],
-                    legendgroup=list(sample_df[self.group_id])[0],
-                    mode='lines',
-                    line={'color': self.color_dct[group]},
-                    connectgaps=False,
-                    showlegend=show_legend,
-                ),
-            )
+            # next chromosome
+            start = stop
 
         # plot locations if specified
         if self.locations_path:
@@ -852,16 +911,11 @@ class Plot:
             legend={'font': {'size': 10}},
             )
 
-        # format lines
-        self.fig.update_traces(
-            line={'width': .7,},
-        )
-
         # format x axis
         self.fig.update_xaxes(
             range=[
-                min(self.data_df['genome_pos']),
-                max(self.data_df['genome_pos']),
+                genome_pos_arr.min(),
+                genome_pos_arr.max(),
             ],
             linewidth=1,
             side='bottom', mirror=True,
@@ -901,7 +955,7 @@ class Plot:
         # plot colorscale instead of per-sample legend for numeric metadata
         if self.numeric:
             val_lst = [
-                float(x) for x in self.data_df[self.color_by] \
+                float(x) for x in self.sample_df[self.color_by] \
                     if not x in self.na_lst
             ]
             min_val = min(val_lst)

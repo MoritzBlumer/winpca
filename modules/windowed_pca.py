@@ -14,12 +14,17 @@ import numpy as np
 if config.VAR_FMT == 'GT':
     import allel
 else:
-    from pcangsd.shared import emMAF
-    from pcangsd.reader_cy import filterArrays                                 # pylint: disable=E0611
-    from pcangsd.covariance import emPCA
+    try:
+        from pcangsd.shared import emMAF
+        from pcangsd.reader_cy import filterArrays                             # pylint: disable=E0611
+        from pcangsd.covariance import emPCA
+    except ImportError:
+        print('\n[ERROR] -v/--var_format GL/PL requires PCAngsd, which is not'
+              ' installed (see documentation)\n', file=sys.stderr, flush=True)
+        sys.exit(1)
 
 ## MODULES
-from modules.log import Log
+from .log import Log
 
 ## INSTANTIATE LOGGER
 log = Log()
@@ -52,6 +57,7 @@ class WPCA:
                  proc_trail_trunc_w,
                  min_maf,
                  x_mode,
+                 write_win_pos,
                  n_threads,
                  ):
 
@@ -69,6 +75,7 @@ class WPCA:
         self.chrom = chrom
         self.start = start
         self.stop = stop
+        self.w_finished = False
 
         # parameters
         self.w_size = w_size
@@ -81,6 +88,7 @@ class WPCA:
         self.proc_trail_trunc_w = proc_trail_trunc_w
         self.min_maf = min_maf
         self.x_mode = x_mode
+        self.write_win_pos = write_win_pos
         self.n_threads = n_threads
 
         # transient variables
@@ -95,10 +103,12 @@ class WPCA:
         self.w_gl_arr = None
         self.w_pl_arr = None
         self.gl_min_maf_arr = None
+        self.w_var_pos_arr = None
         self.w_idx = None
         self.pct_complete = 0
         self.all_empty = None
         self.pc_range = 11
+        self.pcangsd_outdated = False
 
         # instantiate results dict
         self.out_dct = {
@@ -127,46 +137,93 @@ class WPCA:
             '.':   np.nan,
         }
 
+        # dtype mapping for different inputs
+        self.var_dtype_dct = {
+            'GT': np.float64, 'GL': np.float32, 'PL': np.int16,
+        }
 
     def parse_variant(self, process_func, values):
         '''
         Parse GT/GL/PL values of a variant (fixed window size)
         '''
+
+        # variant beyond region: process remaining windows and stop
+        if self.pos > self.stop:
+            self.finish_windows(process_func)
+            return True
+
+        # process all windows that end before this variant
         while self.pos > self.w_stop:
             process_func()
             self.init_win()
-        if self.pos > self.stop:
-            if (self.proc_trail_trunc_w
-                and any(x[0] > self.w_stop-self.w_step for x in self.win)
-            ):
-                self.w_stop = self.stop
-                process_func()
-                self.init_win()
-            return True
+
+        # add variant to the current window
         if self.pos >= self.w_start:
-            self.win.append([self.pos] + values)
+            self.win.append((
+            self.pos,
+            np.array(values, dtype=self.var_dtype_dct[self.var_fmt])
+            ))
+
         return False
+
+
+    def finish_windows(self, process_func):
+        '''
+        Process all remaining windows ending within the region, then the
+        truncated trailing window (if enabled and it contains new variants)
+        '''
+
+        # remaining full windows
+        while self.w_stop <= self.stop:
+            process_func()
+            self.init_win()
+
+        # truncated trailing window
+        if self.proc_trail_trunc_w \
+            and any(x[0] > self.w_stop - self.w_step for x in self.win):
+            self.w_stop = self.stop
+            process_func()
+
+        self.w_finished = True
 
 
     def parse_variant_x(self, process_func, values):
         '''
         Parse GT/GL/PL values of a variant (variable window size)
         '''
-        if len(self.win) < self.w_size:
-            self.win.append([self.pos] + values)
+
+        # variant beyond region: process trailing window and stop
+        if self.pos > self.stop:
+            self.finish_windows_x(process_func)
+            return True
+
+        # add variant, process window once it is full
+        self.win.append((
+            self.pos,
+            np.array(values, dtype=self.var_dtype_dct[self.var_fmt])
+            ))
         if len(self.win) == self.w_size:
             self.w_start = self.win[0][0]
             self.w_stop = self.win[-1][0]
             process_func()
             self.init_win_x()
-        if self.pos > self.stop:
-            if self.proc_trail_trunc_w:
-                if len(self.win) > (self.w_size-self.w_step):
-                    self.w_start = self.win[0][0]
-                    self.w_stop = self.stop
-                    process_func()
-            return True
+
         return False
+
+
+    def finish_windows_x(self, process_func):
+        '''
+        Process the truncated trailing window (if enabled and it contains new
+        variants)
+        '''
+
+        if self.proc_trail_trunc_w \
+            and len(self.win) > self.w_size - self.w_step:
+            self.w_start = self.win[0][0]
+            self.w_stop = self.stop
+            process_func()
+
+        self.w_finished = True
 
 
     def init_win(self):
@@ -229,6 +286,7 @@ class WPCA:
         # keep indices of rows/sites WITHOUT missing call(s)
         mask = ~np.isnan(self.w_gt_arr).any(axis=1)
         self.w_gt_arr = self.w_gt_arr[mask]
+        self.w_var_pos_arr = self.w_var_pos_arr[mask]
 
 
     def gt_min_maf_filter(self):
@@ -263,7 +321,9 @@ class WPCA:
         af_arr[af_arr > 0.5] = 1 - af_arr[af_arr > 0.5]
 
         # keep only sites where AF >= min_maf
-        self.w_gt_arr = self.w_gt_arr[af_arr >= self.min_maf]
+        keep_arr = af_arr >= self.min_maf
+        self.w_gt_arr = self.w_gt_arr[keep_arr]
+        self.w_var_pos_arr = self.w_var_pos_arr[keep_arr]
 
 
     def gt_process_win(self):
@@ -273,15 +333,19 @@ class WPCA:
         '''
 
         # non-empty: trim off pos info, convert to numpy arr, drop missing
-        # sites or mean impute, apply min_maf filter
+        # sites or mean impute, apply min_maf filter, record variant positions
         if self.win:
-            self.w_gt_arr = np.array(
-                [x[1:] for x in self.win], dtype=np.float32
+            self.w_gt_arr = np.vstack(
+                [x[1] for x in self.win]
+            )
+            self.w_var_pos_arr = np.array(
+                [x[0] for x in self.win],
             )
 
         # empty: convert to empty numpy arr
         else:
-            self.w_gt_arr = np.empty((0,0), dtype=np.float32)
+            self.w_gt_arr = np.empty((0,0), dtype=np.float64)
+            self.w_var_pos_arr = np.empty(0, dtype=int)
 
         # call target function
         self.pca()
@@ -297,12 +361,14 @@ class WPCA:
         # emMAF expects different numbers of args depending on the version
         try:
             self.gl_min_maf_arr = emMAF(self.w_gl_arr, 200, 1e-4)
-        except:                                                                # pylint: disable=W0702,E0606
+        except TypeError:                                                      # pylint: disable=E0606
             self.gl_min_maf_arr = emMAF(                                       # pylint: disable=E1121
                 self.w_gl_arr, 200, 1e-4, self.n_threads
             )
-            log.info('PCAngsd version is outdated, updating to the latest '
-                     'version is recommended')
+            if not self.pcangsd_outdated:
+                log.info('PCAngsd version is outdated, updating to the latest'
+                         ' version is recommended')
+                self.pcangsd_outdated = True
 
         # filter by minor allel frequency
         if self.min_maf:
@@ -314,6 +380,8 @@ class WPCA:
             tmp_mask = min_maf_mask.astype(np.uint8)
             filterArrays(self.w_gl_arr, self.gl_min_maf_arr, tmp_mask)
             self.w_gl_arr = self.w_gl_arr[:m,:]
+            self.gl_min_maf_arr = self.gl_min_maf_arr[:m]
+            self.w_var_pos_arr = self.w_var_pos_arr[min_maf_mask]
 
 
     def gl_process_win(self):
@@ -327,15 +395,20 @@ class WPCA:
         sys.stdout = open(os.devnull, 'w')                                     # pylint: disable=R1732
 
         # non-empty: trim off pos info, convert to numpy arr, apply min_maf
-        # filter, convert PL to GL
+        # filter, convert PL to GL, record variant positions
         if self.win:
-            self.w_gl_arr = np.array([x[1:] for x in self.win],
-                                     dtype=np.float32)
+            self.w_gl_arr = np.vstack(
+                [x[1] for x in self.win]
+            )
+            self.w_var_pos_arr = np.array(
+                [x[0] for x in self.win],
+            )
             self.gl_min_maf_filter()
 
         # empty: convert to empty numpy arr & apply target function
         else:
             self.w_gl_arr = np.empty((0,0))
+            self.w_var_pos_arr = np.empty(0, dtype=int)
 
         # call target function
         self.pcangsd()
@@ -369,7 +442,7 @@ class WPCA:
         # normalize all GLs partitioned by sample
         for idx in range(0, w_pl_arr_3d.shape[0]):
             ind_arr = w_pl_arr_3d[idx]
-            ind_arr = 1-(ind_arr / ind_arr.sum(axis=1).reshape(n_rows, 1))
+            ind_arr = ind_arr / ind_arr.sum(axis=1).reshape(n_rows, 1)
             self.w_gl_arr[:,idx*2], self.w_gl_arr[:,idx*2+1] = \
                 ind_arr[:,0], ind_arr[:,1]
 
@@ -385,15 +458,21 @@ class WPCA:
         sys.stdout = open(os.devnull, 'w')                                     # pylint: disable=R1732
 
         # non-empty: trim off pos info, convert to numpy arr, apply min_maf
-        # filter, convert PL to GL
+        # filter, convert PL to GL, record variant positions
         if self.win:
-            self.w_pl_arr = np.array([x[1:] for x in self.win], dtype=np.int16)
+            self.w_pl_arr = np.vstack(
+                [x[1] for x in self.win]
+            )
+            self.w_var_pos_arr = np.array(
+                [x[0] for x in self.win],
+            )
             self.pl_convert_to_gl()
             self.gl_min_maf_filter()
 
         # empty: convert to empty numpy arr & apply target function
         else:
             self.w_gl_arr = np.empty((0,0))
+            self.w_var_pos_arr = np.empty(0, dtype=int)
 
         # call target function
         self.pcangsd()
@@ -413,7 +492,7 @@ class WPCA:
         '''
 
         # get window mid for X value
-        self.w_pos = int(self.w_start + self.w_size/2-1)
+        self.w_pos = int(self.w_start + (self.w_stop - self.w_start + 1)/2 - 1)
 
         # min_maf filter
         if self.min_maf:
@@ -421,6 +500,12 @@ class WPCA:
 
         # count variants
         n_var = self.w_gt_arr.shape[0]
+
+        # count variants dropped due to MAF
+        n_drop_maf = len(self.win) - n_var
+
+        # count variants dropped due to missingness
+        n_drop_miss = 0
 
         # count missing sites per sample
         n_miss_arr = np.isnan(self.w_gt_arr).sum(axis=0)
@@ -448,7 +533,10 @@ class WPCA:
             # drop missing sites
             self.gt_drop_missing_sites()
 
-            # re-count count remaining variants
+            # count variants dropped due to missingness
+            n_drop_miss = n_var - self.w_gt_arr.shape[0]
+
+            # count remaining sites
             n_var = self.w_gt_arr.shape[0]
 
             # separate query samples in projection mode
@@ -513,8 +601,12 @@ class WPCA:
                 'w_size': self.w_stop - self.w_start + 1,
                 'hetp': hetp_lst,
                 'n_miss': n_miss_arr,
+                'n_drop_maf': n_drop_maf,
+                'n_drop_miss': n_drop_miss,
                 'n_var': n_var
             }
+            if self.write_win_pos:
+                out['win_pos'] = ','.join(map(str, self.w_var_pos_arr))
             for i in range(1, self.pc_range):
                 out[f'pc_{i}'] = pca[0][:, i-1]
                 out[f'pc_{i}_ve'] = round(
@@ -534,8 +626,12 @@ class WPCA:
                 'w_size': self.w_stop - self.w_start + 1,
                 'hetp': empty_lst,
                 'n_miss': empty_lst,
+                'n_drop_maf': n_drop_maf,
+                'n_drop_miss': n_drop_miss,
                 'n_var': n_var
             }
+            if self.write_win_pos:
+                out['win_pos'] = ','.join(map(str, self.w_var_pos_arr))
             for i in range(1, self.pc_range):
                 out[f'pc_{i}'] = empty_lst
                 out[f'pc_{i}_ve'] = None
@@ -556,10 +652,13 @@ class WPCA:
         '''
 
         # get window mid for X value
-        self.w_pos = int(self.w_start + self.w_size/2-1)
+        self.w_pos = int(self.w_start + (self.w_stop - self.w_start + 1)/2 - 1)
 
         # count variants
         n_var = self.w_gl_arr.shape[0]
+
+        # count variants dropped due to MAF
+        n_drop_maf = len(self.win) - n_var
 
         # if # variants passes specified threshold
         if n_var >= self.gl_pl_min_var_per_w:
@@ -602,8 +701,12 @@ class WPCA:
                 'w_size': self.w_stop - self.w_start + 1,
                 'hetp': [None for x in eigenvec_arr[:, 0]],
                 'n_miss': [None for x in eigenvec_arr[:, 0]],
+                'n_drop_maf': n_drop_maf,
+                'n_drop_miss': None,
                 'n_var': n_var
             }
+            if self.write_win_pos:
+                out['win_pos'] = ','.join(map(str, self.w_var_pos_arr))
             for i in range(1, self.pc_range):
                 out[f'pc_{i}'] = eigenvec_arr[:, i-1]
                 out[f'pc_{i}_ve'] = round(pct_exp_arr[i-1], 2)
@@ -621,8 +724,12 @@ class WPCA:
                 'w_size': self.w_stop - self.w_start + 1,
                 'hetp': empty_lst,
                 'n_miss':empty_lst,
+                'n_drop_miss': None,
+                'n_drop_maf': n_drop_maf,
                 'n_var': n_var
             }
+            if self.write_win_pos:
+                out['win_pos'] = ','.join(map(str, self.w_var_pos_arr))
             for i in range(1, self.pc_range):
                 out[f'pc_{i}'] = empty_lst
                 out[f'pc_{i}_ve'] = None
@@ -772,7 +879,7 @@ class WPCA:
                         ]
                         gts = [self.gt_code_dct[x] for x in gts]
                         if self.skip_monomorphic \
-                            and len(set(gts)-{np.nan}) == 1:
+                            and len(set(gts)-{np.nan}) <= 1:
                             continue
                         if self.x_mode:
                             if self.parse_variant_x(self.gt_process_win, gts):
@@ -792,7 +899,7 @@ class WPCA:
                             continue
                         gts = [line[2:][idx] for idx in sample_idx_lst]
                         if self.skip_monomorphic \
-                            and len(set(gts)-{np.nan}) == 1:
+                            and len(set(gts)-{np.nan}) <= 1:
                             continue
                         if self.x_mode:
                             if self.parse_variant_x(self.gt_process_win, gts):
@@ -835,8 +942,14 @@ class WPCA:
                             [] if (len(gls)) != len(sample_idx_lst)* 3 else gls
                         if gls == []:
                             continue
+                        # convert log10-scaled to normalized GLs
+                        gl_arr = np.array(gls, dtype=float).reshape(-1, 3)
+                        gl_arr = np.power(
+                            10, gl_arr - gl_arr.max(axis=1, keepdims=True)
+                        )
+                        gl_arr = gl_arr / gl_arr.sum(axis=1, keepdims=True) 
                         # delete 3rd field for each GL (expected by PCAngsd)
-                        gls = np.delete(gls, np.s_[2::3], axis=1)
+                        gls = gl_arr[:, :2].ravel().tolist()
                         if self.x_mode:
                             if self.parse_variant_x(self.gl_process_win, gls):
                                 break
@@ -935,6 +1048,18 @@ class WPCA:
                         else:
                             if self.parse_variant(self.pl_process_win, pls):
                                 break
+
+        # process remaining windows at end of file
+        if not self.w_finished:
+            process_func = {
+                'GT': self.gt_process_win,
+                'GL': self.gl_process_win,
+                'PL': self.pl_process_win,
+            }[self.var_fmt]
+            if self.x_mode:
+                self.finish_windows_x(process_func)
+            else:
+                self.finish_windows(process_func)
 
         # check if any windows were processed
         if len(self.out_dct) == 0:

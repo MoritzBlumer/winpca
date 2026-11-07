@@ -5,7 +5,7 @@ WinPCA modules.
 
 ## METADATA
 __author__ = 'Moritz Blumer, 2024'
-__version__ = '1.2'
+__version__ = '1.3'
 __email__ = 'lmb215@cam.ac.uk'
 
 

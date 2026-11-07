@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "winpca"
+dynamic = ["version"]
+description = "WinPCA - A package for windowed principal component analysis"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [{name = "Moritz Blumer", email = "lmb215@cam.ac.uk"}]
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "pandas",
+    "scikit-allel",
+    "plotly>=6",
+    "kaleido>=1",
+    "pcangsd>=1.36.4",
+]
+
+[project.scripts]
+winpca = "winpca.main:main"
+
+[project.urls]
+Homepage = "https://github.com/MoritzBlumer/winpca"
+
+# the modules/ folder is installed as the importable package "winpca"
+[tool.setuptools]
+packages = ["winpca"]
+package-dir = {"winpca" = "modules"}
+
+[tool.setuptools.package-data]
+winpca = ["ml_weights/*.npz"]
+
+[tool.setuptools.dynamic]
+version = {attr = "winpca.__version__"}

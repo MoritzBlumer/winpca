@@ -8,7 +8,7 @@ import os
 import pandas as pd
 
 ## MODULES
-from modules.log import Log
+from .log import Log
 
 ## INSTANTIATE LOGGER
 log = Log()
@@ -56,6 +56,7 @@ class WPCAData:
                     data=out_df[f'pc_{pc}'].to_list(),
                     index=out_df['pos'],
                     columns=self.w_pca_obj.sample_lst,
+                    dtype=float,
                 ).round(3)
             )
 
@@ -64,6 +65,7 @@ class WPCAData:
             data=out_df['hetp'].to_list(),
             index=out_df['pos'],
             columns=self.w_pca_obj.sample_lst,
+            dtype=float,
         ).round(3)
 
         # miss
@@ -75,10 +77,13 @@ class WPCAData:
         # ).round(3)
 
         # stats: window index, PCs variance explained, number of variants
-        pc_range = int(((len(out_df.columns) - 7)/2)+1)
+        pc_range = len([x for x in out_df.columns if x.endswith('_ve')]) + 1
+        var_pos_lst = ['win_pos'] if 'win_pos' in out_df.columns else []
         self.stat_df = out_df[
-            ['pos', 'w_start', 'w_stop', 'w_size', 'n_var',]
+            ['pos', 'w_start', 'w_stop', 'w_size', 'n_var', 'n_drop_maf',
+             'n_drop_miss',]
             + [f'pc_{i}_ve' for i in range(1, pc_range)]
+            + var_pos_lst
         ].copy().round(3)
         self.stat_df = self.stat_df.reset_index()
         self.stat_df = self.stat_df.rename(columns={'index': 'w_idx'})

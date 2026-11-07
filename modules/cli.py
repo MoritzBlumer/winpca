@@ -12,7 +12,7 @@ from . import config
 from . import __version__
 
 # MODULES
-from modules.log import Log
+from .log import Log
 
 ## INSTANTIATE LOGGER
 log = Log()
@@ -124,9 +124,9 @@ class CLI:
         pca_parser.add_argument(
             '-p', '--polarize', dest='polarize', metavar='\b',
             required=False, type=str, default=str(config.POL_MODE),
-            choices=['auto', 'guide_samples', 'skip'],
-            help=f'{self.tab}sign polarization strategy: auto, guide_samples'
-             f' or skip [{config.POL_MODE}]')
+            choices=['adaptive', 'guide_samples', 'local', 'global', 'skip'],
+            help=f'{self.tab}sign polarization strategy: adaptive,'
+             f' guide_samples, local, global or skip [{config.POL_MODE}]')
         pca_parser.add_argument(
             '-q', '--query_samples', dest='query_samples', metavar='\b',
             required=False, type=str, default=None,
@@ -157,6 +157,12 @@ class CLI:
             help='use SNP count (not bp) for window size (-w) and increment'
               ' (-i); automatically activates mean imputation and disables'
               ' MAF filter')
+        pca_parser.add_argument(
+            '--wp', dest='write_win_pos',
+            required=False, action='store_true', default=False,
+            help='report list of variant positions retained in the per window'
+            ' stat output (i.e. all variants that survived filtering and went'
+            ' into PCA)')
 
 
     def polarize(self):
@@ -177,9 +183,9 @@ class CLI:
         polarize_parser.add_argument(
             '-p', '--polarize', dest='polarize', metavar='\b',
             required=False, type=str, default=str(config.POL_MODE),
-            choices=['auto', 'guide_samples'],
-            help=f'{self.tab}sign polarization strategy: auto or'
-             f' guide_samples [{config.POL_MODE}]')
+            choices=['adaptive', 'guide_samples', 'local', 'global'],
+            help=f'{self.tab}sign polarization strategy: adaptive,'
+             f' guide_samples, local or global [{config.POL_MODE}]')
         polarize_parser.add_argument(
             '-g', '--guide_samples', dest='guide_samples', metavar='\b',
             required=False, type=str, default=None,
@@ -192,6 +198,39 @@ class CLI:
             default=','.join(str(x) for x in config.PCS),
             help=f'{self.tab}comma-separated list of principal components to'
              f' polarize [{",".join(str(x) for x in config.PCS)}]')
+
+
+    def orient(self):
+        '''
+        Orient all chromosomes consistently (automatically flips entire 
+        mis-orientented chromosomes)
+        '''
+
+        # add subparser
+        orient_parser = self.subparsers.add_parser(
+            'orient',
+            help='Read specified chromosomes PC data and automatically orient'
+            ' them consistently'
+        )
+
+        # positional arguments
+        orient_parser.add_argument(
+            dest='run_prefix', metavar='<RUN_PREFIX>',
+            type=str, default=None,
+            help='prefix shared by all chromosome runs to orient')
+        orient_parser.add_argument(
+            dest='run_ids', metavar='<RUN_IDS>',
+            type=str, default=None,
+            help='comma-separated list of run IDs to orient, format: e.g.'
+              ' {prefix}.{run_id}.pc_1.tsv.gz')
+
+        # optional arguments
+        orient_parser.add_argument(
+            '-c', '--components', dest='pol_pcs', metavar='\b',
+            required=False, type=str,
+            default=','.join(str(x) for x in config.PCS),
+            help=f'{self.tab}comma-separated list of principal components to'
+             f' orient [{",".join(str(x) for x in config.PCS)}]')
 
 
     def flip(self):
@@ -322,7 +361,7 @@ class CLI:
         genomeplot_parser.add_argument(
             dest='run_prefix', metavar='<RUN_PREFIX>',
             type=str, default=None,
-            help='prefix shared by all chromosomes runs to include in'
+            help='prefix shared by all chromosome runs to include in'
               ' genome-wide plot')
         genomeplot_parser.add_argument(
             dest='run_ids', metavar='<RUN_IDS>',
@@ -419,7 +458,7 @@ class CLI:
             and not self.args.get('color_by'):
             log.error_nl(
                  '-c/--colors: -g/--groups is required to set specify'
-                 ' group-specificcolors'
+                 ' group-specific colors'
             )
         if self.args.get('query_samples') \
             and self.args.get('var_fmt') != 'GT':
@@ -494,13 +533,10 @@ class CLI:
                     )
 
         # threads
-        if self.args.get('n_threads'):
-            if self.args['n_threads'] < 3:
-                log.error_nl(
-                        f'-t/--threads: Please provide at least 3 threads'
-                    )
-        else:
-            self.args['n_threads'] = 2
+        if self.args.get('n_threads') is None:
+            self.args['n_threads'] = 1
+        elif self.args['n_threads'] < 1:
+            log.error_nl('-t/--threads: please provide at least 1 thread')
 
         # samples --> sample_lst
         if self.args.get('samples'):
@@ -682,6 +718,9 @@ class CLI:
                         f'-c/--component: PC not found: {pc}'
                     )
 
+        # fetch winpca absolute location
+        winpca_dir = os.path.dirname(os.path.abspath(__file__))
+
         # add config settings
         self.args['pcs'] = config.PCS
         self.args['pcangsd_em_eig'] = int(config.PCANGSD_EM_EIG)
@@ -690,6 +729,13 @@ class CLI:
         self.args['gt_min_var_per_w'] = int(config.GT_MIN_VAR_PER_W)
         self.args['gl_pl_min_var_per_w'] = int(config.GL_PL_MIN_VAR_PER_W)
         self.args['n_prev_windows'] = int(config.N_PREV_WINDOWS)
+        self.args['n_draws_local'] = int(config.N_DRAWS_LOCAL)
+        self.args['flip_threshold_local'] = float(config.FLIP_THRESHOLD_LOCAL)
+        self.args['weights_local_path'] = \
+            os.path.join(winpca_dir, config.WEIGHTS_LOCAL_PATH)
+        self.args['weights_global_path'] = \
+            os.path.join(winpca_dir, config.WEIGHTS_GLOBAL_PATH)
+        self.args['epsilon'] = float(config.EPSILON)
         self.args['gt_mean_impute'] = bool(config.GT_MEAN_IMPUTE)
         self.args['proc_trail_trunc_w'] = bool(config.PROC_TRAIL_TRUNC_W)
         self.args['chromplot_w'] = int(config.CHROMPLOT_W)
