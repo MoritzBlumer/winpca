@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/MoritzBlumer/winpca/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: REPLACE_WITH_SHA256_OF_THE_TAG_TARBALL
+  sha256: 31357ad3c8990513bae602d6c959b12266ff29b6ee66e3646c95c8e5d0bc440a
 
 build:
   number: 0
