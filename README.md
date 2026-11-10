@@ -1,4 +1,4 @@
-
+[![PyPI](https://img.shields.io/pypi/v/winpca)](https://pypi.org/project/winpca/)
 # _WinPCA_
 
 A package for windowed principal component analysis.
