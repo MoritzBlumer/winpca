@@ -164,16 +164,19 @@ class Plot:
             if len(self.metadata_df.index) != len(set(self.metadata_df.index)):
                 log.error_nl('-m/--metadata: metadata file contains'
                           ' non-unique sample IDs')
-            # subset and reorder metadata_df to match data_df individuals
-            self.metadata_df = self.metadata_df.loc[
-                self.metadata_df.index.intersection(sample_lst)
-            ].reindex(sample_lst)
 
             # if individuals are missing in the metadata print error message
-            if len(self.metadata_df) != len(sample_lst):
+            missing_lst = [
+                x for x in sample_lst if x not in self.metadata_df.index
+            ]
+            if missing_lst:
                 log.newline()
-                log.error_nl('-m/--metadata: one or more sample IDs are missing'
-                          ' in the provided metadata file')
+                log.error_nl('-m/--metadata: the following sample IDs are'
+                            f' missing in the provided metadata file:'
+                            f' {",".join(missing_lst)}')
+
+            # subset and reorder metadata_df to match data_df individuals
+            self.metadata_df = self.metadata_df.loc[sample_lst]
 
             # add metadata columns to sample_df
             for column_name in self.metadata_df.columns:
