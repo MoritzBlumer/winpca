@@ -519,6 +519,19 @@ class Plot:
             # parse file
             self.parse_locations()
 
+            # placeholder locations legend item
+            self.fig.add_shape(
+                x0=0, x1=0, y0=0, y1=0,
+                xref='paper', yref='paper',
+                line_width=0,
+                fillcolor='#b8b8b8',
+                opacity=self.locations_opacity,
+                name='locations',
+                legendgroup='locations',
+                showlegend=True,
+                legendrank=0,
+            )
+
             # plot features
             for feature in self.locations_dct.values():
 
@@ -563,6 +576,9 @@ class Plot:
                     opacity=self.locations_opacity,
                     line={'width': 0},
                     layer='below',
+                    name='locations',
+                    legendgroup='locations',
+                    showlegend=False,
                 )
 
         # encode position as 32 bit int if possible, otherwise 64 bit float
@@ -842,6 +858,20 @@ class Plot:
                 chrom_offset_dct[chrom]['offset'] = 0 if i == 0 \
                     else chrom_end_lst[i-1]
 
+
+            # placeholder locations legend item
+            self.fig.add_shape(
+                x0=0, x1=0, y0=0, y1=0,
+                xref='paper', yref='paper',
+                line_width=0,
+                fillcolor='#b8b8b8',
+                opacity=self.locations_opacity,
+                name='locations',
+                legendgroup='locations',
+                showlegend=True,
+                legendrank=0,
+            )
+
             # plot features
             for feature in self.locations_dct.values():
 
@@ -900,6 +930,9 @@ class Plot:
                     opacity=self.locations_opacity,
                     line={'width': 0},
                     layer='below',
+                    name='locations',
+                    legendgroup='locations',
+                    showlegend=False,
                 )
 
         # general layout

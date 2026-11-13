@@ -14,7 +14,7 @@ dependencies = [
     "numpy",
     "pandas",
     "scikit-allel",
-    "plotly>=6",
+    "plotly>=7.0",
     "kaleido>=1",
     "pcangsd>=1.36.4",
 ]
